@@ -1,0 +1,10 @@
+.gradle
+.idea
+build/
+out/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store

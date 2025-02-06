@@ -10,7 +10,10 @@ repositories {
 }
 
 dependencies {
-    implementation 'javax.websocket:javax.websocket-api:1.1'
+    implementation 'jakarta.websocket:jakarta.websocket-api:2.2.0'
+    implementation 'org.glassfish.tyrus:tyrus-server:2.2.0'
+    //implementation 'org.eclipse.jetty.ee10.websocket:jetty-ee10-websocket-jakarta-server:12.0.16'
+    runtimeOnly 'org.glassfish.tyrus:tyrus-container-grizzly-server:2.2.0'
 
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'

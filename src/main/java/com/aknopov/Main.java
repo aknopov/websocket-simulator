@@ -8,11 +8,12 @@ import org.glassfish.tyrus.server.Server;
 public class Main {
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 0, "/", Map.of(), WebSocketEndpoint.class);
+        Server server = new Server("localhost", 0, "/", Map.of(), WebSocketEndpoint2.getConfigClass());
 
         try {
             server.start();
-            System.err.printf("Running on port %d%n", server.getPort());//UC
+            System.err.printf("Running on port %d%n", server.getPort());
+
             Scanner scanner = new Scanner(System.in);
             String ignored = scanner.nextLine();
         }

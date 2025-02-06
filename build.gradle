@@ -10,10 +10,13 @@ repositories {
 }
 
 dependencies {
-    implementation 'jakarta.websocket:jakarta.websocket-api:2.2.0'
-    implementation 'org.glassfish.tyrus:tyrus-server:2.2.0'
-    //implementation 'org.eclipse.jetty.ee10.websocket:jetty-ee10-websocket-jakarta-server:12.0.16'
-    runtimeOnly 'org.glassfish.tyrus:tyrus-container-grizzly-server:2.2.0'
+    implementation "jakarta.websocket:jakarta.websocket-api:$jakartaVersion"
+    implementation "org.glassfish.tyrus:tyrus-server:$jakartaVersion"
+    runtimeOnly "org.glassfish.tyrus:tyrus-container-grizzly-server:$jakartaVersion"
+
+    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+
+    compileOnly "com.google.code.findbugs:jsr305:$jsr305Version"
 
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'

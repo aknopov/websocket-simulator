@@ -3,6 +3,8 @@ package com.aknopov;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nullable;
+
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.OnClose;
@@ -17,7 +19,7 @@ import jakarta.websocket.server.ServerEndpoint;
 
 @ServerEndpoint("/socket")
 public class WebSocketEndpoint {
-    //UC @Nullable
+    @Nullable
     private Session session;
 
     @OnOpen

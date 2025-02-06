@@ -2,18 +2,22 @@
 <body>
 <div>
     <div>WebSocket Address:</div>
-    <input type="text" id="url" value="ws://localhost:8080/socket"/>
+    <input type="text" id="url" value="ws://localhost:8025/path"/>
+    <input type="button" id="connectBtn" value="CONNECT" onclick="connect()"/>
 </div>
 <br/>
 <div>
     <div>Message:</div>
-    <input type="text" id="input"/>
+    <input type="text" id="inputT" value="Hello!"/>
+    <input type="button" id="sendBtnT" value="SEND" onclick="sendT()" disabled="true"/>
 </div>
 <br/>
 <div>
-    <input type="button" id="connectBtn" value="CONNECT" onclick="connect()"/>
-    <input type="button" id="sendBtn" value="SEND" onclick="send()" disabled="true"/>
+    <div>Binary Message:</div>
+    <input type="text" id="inputB" value="Hello!"/>
+    <input type="button" id="sendBtnB" value="SEND" onclick="sendB()" disabled="true"/>
 </div>
+<br/>
 <div id="output">
     <p>Output</p>
 </div>
@@ -22,14 +26,18 @@
 <script type="text/javascript">
     var webSocket;
     var url = document.getElementById("url");
-    var input = document.getElementById("input");
+    var inputT = document.getElementById("inputT");
+    var inputB = document.getElementById("inputB");
     var output = document.getElementById("output");
     var connectBtn = document.getElementById("connectBtn");
-    var sendBtn = document.getElementById("sendBtn");
+    var sendBtnT = document.getElementById("sendBtnT");
+    var sendBtnB = document.getElementById("sendBtnB");
+    var utf8Encode = new TextEncoder();
 
     (function() {
        translateEnterEvent(url, connectBtn);
-       translateEnterEvent(input, sendBtn);
+       translateEnterEvent(inputT, sendBtnT);
+       translateEnterEvent(inputB, sendBtnB);
     })();
 
     function connect() {
@@ -44,8 +52,8 @@
         webSocket.onopen = function(event) {
             updateOutput("Connected!");
             connectBtn.disabled = true;
-            sendBtn.disabled = false;
-
+            sendBtnT.disabled = false;
+            sendBtnB.disabled = false;
         };
 
         webSocket.onmessage = function(event) {
@@ -55,12 +63,17 @@
         webSocket.onclose = function(event) {
             updateOutput("Connection Closed");
             connectBtn.disabled = false;
-            sendBtn.disabled = true;
+            sendBtnT.disabled = true;
+            sendBtnB.disabled = true;
         };
     }
 
-    function send() {
-        webSocket.send(input.value)
+    function sendT() {
+        webSocket.send(inputT.value);
+    }
+
+    function sendB() {
+        webSocket.send(utf8Encode.encode(inputB.value));
     }
 
     function closeSocket() {

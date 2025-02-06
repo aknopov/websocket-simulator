@@ -9,12 +9,12 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author sasha
  */
-class WebSocketEndpoint2Test {
+class WebSocketEndpointTest {
 
     @Test
     void testConfigCreation() throws Exception
     {
-        var configClass = WebSocketEndpoint2.getConfigClass();
+        var configClass = WebSocketEndpoint.getConfigClass();
         var obj = configClass.getDeclaredConstructor().newInstance();
         assertNotNull(obj);
     }

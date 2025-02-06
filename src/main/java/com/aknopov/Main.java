@@ -8,7 +8,7 @@ import org.glassfish.tyrus.server.Server;
 public class Main {
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 0, "/", Map.of(), WebSocketEndpoint2.getConfigClass());
+        Server server = new Server("localhost", 0, "/", Map.of(), WebSocketEndpoint.getConfigClass());
 
         try {
             server.start();

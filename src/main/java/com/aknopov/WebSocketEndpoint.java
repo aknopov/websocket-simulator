@@ -2,73 +2,125 @@ package com.aknopov;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jakarta.websocket.CloseReason;
+import jakarta.websocket.Endpoint;
 import jakarta.websocket.EndpointConfig;
-import jakarta.websocket.OnClose;
-import jakarta.websocket.OnError;
-import jakarta.websocket.OnMessage;
-import jakarta.websocket.OnOpen;
-import jakarta.websocket.RemoteEndpoint;
+import jakarta.websocket.MessageHandler;
 import jakarta.websocket.Session;
-import jakarta.websocket.server.ServerEndpoint;
+import jakarta.websocket.server.ServerApplicationConfig;
+import jakarta.websocket.server.ServerEndpointConfig;
 
-// Declarative approach
+// Programmatic approach
 
-@ServerEndpoint("/socket")
-public class WebSocketEndpoint {
+public class WebSocketEndpoint extends Endpoint {
+    private static final Logger logger = LoggerFactory.getLogger(WebSocketEndpoint.class);
+
     @Nullable
     private Session session;
 
-    @OnOpen
-    public void onOpen(Session session, EndpointConfig ignored) {
-        System.out.println("WebSocket opened: " + session.getId());
+    public static Class<? extends ServerApplicationConfig> getConfigClass() {
+        return MyServerApplicationConfig.class;
+    }
+
+    @Override
+    public void onOpen(Session session, EndpointConfig config) {
         this.session = session;
+        session.addMessageHandler(new TextMessageHandler(this::onTextMessage));
+        session.addMessageHandler(new BinaryMessageHandler(this::onBinaryMessage));
+
+        session.setMaxBinaryMessageBufferSize(1024000);
+        session.setMaxIdleTimeout(10000L);
 
         session.getUserProperties().put("started", true); // an example of storing state
+
+        logger.debug("WebSocket opened");
     }
 
-    @OnClose
-    public void onClose(CloseReason reason) {
-        this.session = null;
-        System.out.println("Closing a WebSocket due to " + reason.getReasonPhrase());
+    @Override
+    public void onClose(Session session, CloseReason closeReason) {
+        session = null;
+        logger.debug("Closing a WebSocket due to {}", closeReason.getReasonPhrase());
     }
 
-    @OnError
-    public void onError(Session ignored, Throwable error) {
-        error.printStackTrace(System.err); //UC
+    @Override
+    public void onError(Session session, Throwable thr) {
+        logger.error("Error happened", thr);
     }
 
-    @OnMessage
-    public void handleTextMessage(Session ignored, String message) {
-        System.out.println("Text Message Received: " + message);
-    }
-
-    @OnMessage(maxMessageSize = 1024000)
-    public void handleBinaryMessage(Session ignored, ByteBuffer buffer) {
-        System.out.println("New Binary Message Received. Len=" + buffer.remaining());
-    }
-
-    public void sendMessage(String message) throws IOException {
-        if (session != null && session.isOpen()) {
-            RemoteEndpoint.Basic other = session.getBasicRemote();
-            other.sendText(message);
+    private void onTextMessage(String message) {
+        logger.debug("Text Message Received: {}", message);
+        try {
+            sendTextMessage("Acknowledged text");
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public void sendMessage(ByteBuffer buffer) throws IOException {
-        if (session != null && session.isOpen()) {
-            RemoteEndpoint.Basic other = session.getBasicRemote();
-            other.sendBinary(buffer);
+    private void onBinaryMessage(ByteBuffer message) {
+        logger.debug("Binary Message Received: len={}", message.remaining());
+        try {
+            sendTextMessage("Acknowledged binary");
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public synchronized void closeConnection() throws IOException {
-        if (session != null) {
-            session.close();
-            session = null;
+    public void sendTextMessage(String message) throws IOException {
+        if (session != null && session.isOpen()) {
+            logger.debug("Sending text message");
+            session.getBasicRemote()
+                    .sendText(message);
+        }
+    }
+
+    public void sendBinaryMessage(ByteBuffer message) throws IOException {
+        if (session != null && session.isOpen()) {
+            logger.debug("Sending binary message");
+            session.getBasicRemote()
+                    .sendBinary(message);
+        }
+    }
+
+    /**
+     * This class should be public!
+     */
+    public static class MyServerApplicationConfig implements ServerApplicationConfig {
+
+        @Override
+        public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> set) {
+            return Set.of(ServerEndpointConfig.Builder.create(WebSocketEndpoint.class, "/path")
+                    .build());
+        }
+
+        @Override
+        public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> set) {
+            return Set.of();
+        }
+
+    }
+
+    // These two can't be generic
+    private record TextMessageHandler(Consumer<String> messageConsumer) implements MessageHandler.Whole<String> {
+        @Override
+        public void onMessage(String message) {
+            messageConsumer.accept(message);
+        }
+    }
+
+    private record BinaryMessageHandler(Consumer<ByteBuffer> messageConsumer) implements MessageHandler.Whole<ByteBuffer> {
+        @Override
+        public void onMessage(ByteBuffer message) {
+            messageConsumer.accept(message);
         }
     }
 }

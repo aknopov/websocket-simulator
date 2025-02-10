@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="10 seconds">
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
+
+    <appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d [%thread] %-5level logger="%logger{35}", msg="%msg"%n</pattern>
+        </encoder>
+    </appender>
+
+    <variable name="LOGBACK_ROOT_LEVEL" value="${LOGBACK_ROOT_LEVEL:-INFO}" />
+    <root level="${LOGBACK_ROOT_LEVEL}">
+        <appender-ref ref="consoleAppender"/>
+    </root>
+
+    <!-- Override some of the noisier loggers -->
+    <logger name="com.aknopov.wssimulator.WebSocketEndpoint" level="INFO"/>
+
+</configuration>

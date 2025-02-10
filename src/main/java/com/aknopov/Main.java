@@ -1,27 +1,49 @@
 package com.aknopov;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Scanner;
 
-import org.glassfish.tyrus.server.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class Main {
+import com.aknopov.wssimulator.EventListener;
+import com.aknopov.wssimulator.EventListenerSample;
+import com.aknopov.wssimulator.SessionConfig;
+import com.aknopov.wssimulator.WebSocketClient;
+import com.aknopov.wssimulator.WebSocketServer;
+import com.aknopov.wssimulator.injection.ServiceLocator;
 
-    public static void main(String[] args) {
-        Server server = new Server("localhost", 0, "/", Map.of(), WebSocketEndpoint.getConfigClass());
+public final class Main {
+    private static final Logger logger = LoggerFactory.getLogger(WebSocketServer.class);
 
-        try {
-            server.start();
-            System.err.printf("Running on port %d%n", server.getPort());
+    private Main() {
+    }
 
-            Scanner scanner = new Scanner(System.in);
+    public static void main(String[] args) throws Exception {
+        SessionConfig config = new SessionConfig("/path", Duration.ofSeconds(10), 1024000);
+        EventListener listener = new EventListenerSample();
+        ServiceLocator.init(config, listener);
+
+        WebSocketServer server = new WebSocketServer("localhost", "/", Map.of());
+        server.start();
+
+        logger.info("-------------------------------");
+        logger.info("Server is running on port {}", server.getPort());
+        logger.info("-------------------------------");
+
+        WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()));
+        client.start();
+        client.sendTextMessage("Hello from auto!");
+        client.sendBinaryMessage(ByteBuffer.wrap("Binary message".getBytes(Charset.defaultCharset())));
+        client.stop();
+
+        try (Scanner scanner = new Scanner(System.in, Charset.defaultCharset())) {
             String ignored = scanner.nextLine();
         }
-        catch (Exception e) {
-            e.printStackTrace(System.err);
-        }
-        finally {
-            server.stop();
-        }
+
+        server.stop();
     }
 }

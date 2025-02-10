@@ -1,27 +1,64 @@
 plugins {
     id 'java'
+    id 'checkstyle'
+    id('net.ltgt.errorprone') version '4.1.0'
+    id('net.ltgt.nullaway') version '2.2.0'
 }
 
 group = 'com.aknopov'
-version = '1.0-SNAPSHOT'
+version = '0.0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
 }
 
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+
 dependencies {
+    errorprone("com.google.errorprone:error_prone_core:$errorproneVersion")
+    errorprone("com.uber.nullaway:nullaway:$nullawayVersion")
+
     implementation "jakarta.websocket:jakarta.websocket-api:$jakartaVersion"
     implementation "org.glassfish.tyrus:tyrus-server:$jakartaVersion"
     runtimeOnly "org.glassfish.tyrus:tyrus-container-grizzly-server:$jakartaVersion"
 
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
+    runtimeOnly "ch.qos.logback:logback-classic:$logbackVersion"
 
     compileOnly "com.google.code.findbugs:jsr305:$jsr305Version"
+    compileOnly "com.google.errorprone:error_prone_annotations:$errorproneVersion"
 
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
 }
 
 test {
     useJUnitPlatform()
+}
+
+project.checkstyle.configDirectory.set(file('./checkstyle'))
+
+nullaway {
+    annotatedPackages.add("com.aknopov.wssimulator")
+}
+
+import net.ltgt.gradle.errorprone.CheckSeverity
+
+tasks.withType(JavaCompile).configureEach {
+    if (!name.toLowerCase().contains("test")) {
+        options.errorprone {
+            enabled = true
+            disableWarningsInGeneratedCode = true
+            // checks to the extreme
+            allDisabledChecksAsWarnings = true
+            // Disable particular errors globally
+            disable("Var", "Varifier", "Java7ApiChecker", "Java8ApiChecker", "DefaultLocale")
+            // List packages to check in comma-separated list
+            nullaway {
+                severity = CheckSeverity.ERROR
+            }
+        }
+    }
 }

@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
+import com.aknopov.wssimulator.ProtocolHandshake;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.tyrus.WebSocketClient;
 import com.aknopov.wssimulator.tyrus.WebSocketServer;
@@ -37,7 +38,7 @@ public final class Main {
         logger.info("Server is running on port {}", server.getPort());
         logger.info("-------------------------------");
 
-        WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()));
+        WebSocketClient client = new WebSocketClient("ws://localhost:" + server.getPort() + "/path");
         client.start();
         client.sendTextMessage("Hello from auto!");
         client.sendBinaryMessage(ByteBuffer.wrap("Binary message".getBytes(Charset.defaultCharset())));
@@ -58,7 +59,7 @@ public final class Main {
 
         @Override
         public void onHandshake(ProtocolHandshake handshake) {
-            logger.info("ProtocolHandshake for {}, headers: {}", handshake.requestUri(), handshake.headers().size());
+            logger.info("ProtocolHandshake: for {}, status={}", handshake.requestUri(), handshake.status());
         }
 
         @Override

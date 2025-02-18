@@ -40,25 +40,28 @@ test {
 
 project.checkstyle.configDirectory.set(file('./checkstyle'))
 
-nullaway {
-    annotatedPackages.add("com.aknopov.wssimulator")
-}
-
 import net.ltgt.gradle.errorprone.CheckSeverity
 
-tasks.withType(JavaCompile).configureEach {
-    if (!name.toLowerCase().contains("test")) {
+tasks {
+    compileJava {
         options.errorprone {
             enabled = true
             disableWarningsInGeneratedCode = true
             // checks to the extreme
             allDisabledChecksAsWarnings = true
             // Disable particular errors globally
-            disable("Var", "Varifier", "Java7ApiChecker", "Java8ApiChecker", "DefaultLocale")
+            disable("Varifier", "Java7ApiChecker", "Java8ApiChecker", "AndroidJdkLibsChecker", "BooleanParameter")
             // List packages to check in comma-separated list
             nullaway {
                 severity = CheckSeverity.ERROR
             }
         }
     }
+    compileTestJava {
+        options.errorprone.enabled = false
+    }
+}
+
+nullaway {
+    annotatedPackages.add("com.aknopov.wssimulator")
 }

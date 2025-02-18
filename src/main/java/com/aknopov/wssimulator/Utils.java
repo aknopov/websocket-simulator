@@ -27,6 +27,7 @@ public final class Utils {
      * @return {@code obj} if not {@code null}
      * @throws IllegalStateException if {@code obj} is {@code null}
      */
+    @SuppressWarnings("CanIgnoreReturnValueSuggester")
     public static <T> T requireNonNull(@Nullable T obj) {
         if (obj == null) {
             throw new IllegalStateException();

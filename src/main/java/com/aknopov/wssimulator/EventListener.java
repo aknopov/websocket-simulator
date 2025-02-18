@@ -1,8 +1,6 @@
 package com.aknopov.wssimulator;
 
-import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.Map;
 
 import jakarta.websocket.CloseReason;
@@ -11,10 +9,6 @@ import jakarta.websocket.CloseReason;
  * WebSocket event listener
  */
 public interface EventListener {
-
-    @SuppressWarnings("ImmutableMemberCollection")
-    record ProtocolHandshake(URI requestUri, Map<String, List<String>> headers, String queryString) {
-    }
 
     /**
      * Callback on protocol upgrade

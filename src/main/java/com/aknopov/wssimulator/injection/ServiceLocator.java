@@ -30,6 +30,7 @@ public class ServiceLocator {
         return getOrCreateInstance(klaz);
     }
 
+    @SuppressWarnings("unchecked")
     private static synchronized <T> T getOrCreateInstance(Class<T> klaz) {
         Object value = BINDINGS.getOrDefault(klaz, klaz);
 

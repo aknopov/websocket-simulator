@@ -7,10 +7,12 @@ import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
+import org.glassfish.tyrus.core.TyrusUpgradeResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
+import com.aknopov.wssimulator.ProtocolHandshake;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.injection.ServiceLocator;
 import jakarta.websocket.CloseReason;
@@ -69,7 +71,7 @@ public class WebSocketEndpoint extends Endpoint {
     @Override
     public void onClose(Session session, CloseReason closeReason) {
         eventListener.onClose(closeReason);
-        session = null;
+        this.session = null;
     }
 
     @Override
@@ -176,8 +178,9 @@ public class WebSocketEndpoint extends Endpoint {
 
         @Override
         public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
+            int status = (response instanceof TyrusUpgradeResponse tyrusResponse) ? tyrusResponse.getStatus() : -1;
             eventListener.onHandshake(
-                    new EventListener.ProtocolHandshake(request.getRequestURI(), request.getHeaders(), request.getQueryString()));
+                    new ProtocolHandshake(request.getRequestURI(), request.getQueryString(), request.getHeaders(), status));
         }
     }
 }

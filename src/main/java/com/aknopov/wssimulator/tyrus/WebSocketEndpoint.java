@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.tyrus;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -10,6 +10,8 @@ import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.aknopov.wssimulator.EventListener;
+import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.injection.ServiceLocator;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.Endpoint;
@@ -175,7 +177,7 @@ public class WebSocketEndpoint extends Endpoint {
         @Override
         public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
             eventListener.onHandshake(
-                    new EventListener.Handshake(request.getRequestURI(), request.getHeaders(), request.getQueryString()));
+                    new EventListener.ProtocolHandshake(request.getRequestURI(), request.getHeaders(), request.getQueryString()));
         }
     }
 }

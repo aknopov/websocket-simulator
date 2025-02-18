@@ -2,7 +2,7 @@ package com.aknopov.wssimulator.injection;
 
 import org.junit.jupiter.api.Test;
 
-import com.aknopov.wssimulator.BaseTest;
+import com.aknopov.wssimulator.tyrus.BaseTest;
 import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.SessionConfig;
 

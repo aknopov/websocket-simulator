@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.tyrus;
 
 import java.io.IOException;
 import java.net.URI;

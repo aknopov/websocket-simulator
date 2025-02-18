@@ -10,25 +10,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
-import com.aknopov.wssimulator.EventListenerSample;
 import com.aknopov.wssimulator.SessionConfig;
-import com.aknopov.wssimulator.WebSocketClient;
-import com.aknopov.wssimulator.WebSocketServer;
+import com.aknopov.wssimulator.tyrus.WebSocketClient;
+import com.aknopov.wssimulator.tyrus.WebSocketServer;
 import com.aknopov.wssimulator.injection.ServiceLocator;
+import jakarta.websocket.CloseReason;
 
 public final class Main {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketServer.class);
+
+    private static final Duration IDLE_TIMEOUT = Duration.ofSeconds(10);
 
     private Main() {
     }
 
     public static void main(String[] args) throws Exception {
-        SessionConfig config = new SessionConfig("/path", Duration.ofSeconds(10), 1024000);
+        SessionConfig config = new SessionConfig("/path", IDLE_TIMEOUT, 1024000);
         EventListener listener = new EventListenerSample();
         ServiceLocator.init(config, listener);
 
-        WebSocketServer server = new WebSocketServer("localhost", "/", Map.of());
+        WebSocketServer server = new WebSocketServer("localhost", "/", Map.of()); //+
         server.start();
+        server.waitForStart(IDLE_TIMEOUT);
 
         logger.info("-------------------------------");
         logger.info("Server is running on port {}", server.getPort());
@@ -45,5 +48,42 @@ public final class Main {
         }
 
         server.stop();
+    }
+
+    /**
+     * An implementation od EventListener
+     */
+    public static class EventListenerSample implements EventListener {
+        private static final Logger logger = LoggerFactory.getLogger(EventListenerSample.class);
+
+        @Override
+        public void onHandshake(ProtocolHandshake handshake) {
+            logger.info("ProtocolHandshake for {}, headers: {}", handshake.requestUri(), handshake.headers().size());
+        }
+
+        @Override
+        public void onOpen(Map<String, Object> userProperties) {
+            logger.info("Connection opened. Properties have {} entries", userProperties.size());
+        }
+
+        @Override
+        public void onClose(CloseReason closeReason) {
+            logger.info("Connection closed. Reason - {}", closeReason);
+        }
+
+        @Override
+        public void onError(Throwable error) {
+            logger.error("Error happened", error);
+        }
+
+        @Override
+        public void onTextMessage(String message) {
+            logger.info("Text message received: {}", message);
+        }
+
+        @Override
+        public void onBinaryMessage(ByteBuffer message) {
+            logger.info("Binary message received: len={}", message.remaining());
+        }
     }
 }

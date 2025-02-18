@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.tyrus;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -40,7 +40,7 @@ public class WebSocketServer {
     }
 
     /**
-     * Creates server instant that will be run on some available port (see <a href="com.aknopov.wssimulator.WebSocketServer#getPort()">getPort</a>).
+     * Creates server instant that will be run on some available port (see <a href="com.aknopov.wssimulator.tyrus.WebSocketServer#getPort()">getPort</a>).
      *
      * @param host host name
      * @param contextPath root context path

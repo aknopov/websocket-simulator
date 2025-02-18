@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.tyrus;
 
 import java.time.Duration;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.tyrus;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -6,6 +6,8 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeEach;
 
+import com.aknopov.wssimulator.EventListener;
+import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.injection.ServiceLocator;
 
 import static org.mockito.Mockito.mock;

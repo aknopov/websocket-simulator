@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.tyrus;
 
 import java.time.Duration;
 import java.util.Map;
@@ -6,6 +6,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
+import com.aknopov.wssimulator.EventListener;
 import jakarta.websocket.CloseReason;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -30,7 +31,7 @@ public class ClientServerTest extends BaseTest {
         Thread.sleep(200);
 
         InOrder inOrder = inOrder(mockListener);
-        inOrder.verify(mockListener).onHandshake(any(EventListener.Handshake.class));
+        inOrder.verify(mockListener).onHandshake(any(EventListener.ProtocolHandshake.class));
         inOrder.verify(mockListener, times(2)).onOpen(anyMap());
         inOrder.verify(mockListener).onTextMessage(TEXT_MESSAGE);
         inOrder.verify(mockListener).onBinaryMessage(BINARY_MESSAGE);

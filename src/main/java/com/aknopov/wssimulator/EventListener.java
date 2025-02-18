@@ -15,7 +15,7 @@ public interface EventListener {
      *
      * @param handshake handshake info
      */
-    void onHandshake(ProtocolHandshake handshake);
+    void onHandshake(ProtocolUpgrade handshake);
 
     /**
      * Callback on WebSocket "open" event

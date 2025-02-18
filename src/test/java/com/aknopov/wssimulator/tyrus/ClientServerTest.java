@@ -1,16 +1,13 @@
 package com.aknopov.wssimulator.tyrus;
 
-import java.net.HttpURLConnection;
 import java.time.Duration;
 import java.util.Map;
 
-import org.glassfish.grizzly.http.util.HttpStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InOrder;
 
-import com.aknopov.wssimulator.ProtocolHandshake;
+import com.aknopov.wssimulator.ProtocolUpgrade;
 import jakarta.websocket.CloseReason;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +35,7 @@ public class ClientServerTest extends BaseTest {
 
         Thread.sleep(200);
 
-        ArgumentCaptor<ProtocolHandshake> handshakeCaptor = ArgumentCaptor.forClass(ProtocolHandshake.class);
+        ArgumentCaptor<ProtocolUpgrade> handshakeCaptor = ArgumentCaptor.forClass(ProtocolUpgrade.class);
         InOrder inOrder = inOrder(mockListener);
         inOrder.verify(mockListener).onHandshake(handshakeCaptor.capture());
         inOrder.verify(mockListener, times(2)).onOpen(anyMap());
@@ -46,7 +43,7 @@ public class ClientServerTest extends BaseTest {
         inOrder.verify(mockListener).onBinaryMessage(BINARY_MESSAGE);
         inOrder.verify(mockListener, atLeastOnce()).onClose(any(CloseReason.class));
 
-        assertEquals(ProtocolHandshake.SWITCH_SUCCESS_CODE, handshakeCaptor.getValue().status());
+        assertEquals(ProtocolUpgrade.SWITCH_SUCCESS_CODE, handshakeCaptor.getValue().status());
         server.stop();
     }
 

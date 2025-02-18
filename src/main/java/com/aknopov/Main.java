@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
-import com.aknopov.wssimulator.ProtocolHandshake;
+import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.tyrus.WebSocketClient;
 import com.aknopov.wssimulator.tyrus.WebSocketServer;
@@ -58,8 +58,8 @@ public final class Main {
         private static final Logger logger = LoggerFactory.getLogger(EventListenerSample.class);
 
         @Override
-        public void onHandshake(ProtocolHandshake handshake) {
-            logger.info("ProtocolHandshake: for {}, status={}", handshake.requestUri(), handshake.status());
+        public void onHandshake(ProtocolUpgrade handshake) {
+            logger.info("ProtocolUpgrade: for {}, status={}", handshake.requestUri(), handshake.status());
         }
 
         @Override

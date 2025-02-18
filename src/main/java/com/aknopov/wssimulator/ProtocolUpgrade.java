@@ -13,6 +13,6 @@ import java.util.Map;
  * @param status WebSocket response status code (HTTP-101, HTTP-404 etc)
  */
 @SuppressWarnings("ImmutableMemberCollection")
-public record ProtocolHandshake(URI requestUri, String queryString, Map<String, List<String>> headers, int status) {
+public record ProtocolUpgrade(URI requestUri, String queryString, Map<String, List<String>> headers, int status) {
     public static final int SWITCH_SUCCESS_CODE = 101;
 }

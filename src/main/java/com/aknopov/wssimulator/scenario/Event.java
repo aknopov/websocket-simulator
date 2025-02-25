@@ -4,26 +4,10 @@ import java.time.Instant;
 
 /**
  * Web Simulator event
+ *
+ * @param eventTime the time of the event
+ * @param eventType the type of the event
+ * @param isCompleted whether the event has been completed
  */
-public interface Event { //UC to concrete class
-    /**
-     * Gets the time of the event
-     *
-     * @return time instant
-     */
-    Instant eventTime();
-
-    /**
-     * Get type of the event
-     *
-     * @return event type
-     */
-    EventType eventType(); //UC the same as action?
-
-    /**
-     * Whether the event has been completed.
-     *
-     * @return check result
-     */
-    boolean isCompleted();
+public record Event(Instant eventTime, EventType eventType, boolean isCompleted) {
 }

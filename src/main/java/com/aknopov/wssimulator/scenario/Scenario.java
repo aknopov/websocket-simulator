@@ -3,7 +3,7 @@ package com.aknopov.wssimulator.scenario;
 import java.lang.reflect.Executable;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
@@ -11,7 +11,7 @@ import com.aknopov.wssimulator.ProtocolUpgrade;
 /**
  * An interface to scenario
  */
-public interface Scenario { //UC WebSocketEventFactory
+public interface Scenario { //UC ref WebSocketEventFactory
 
     /**
      * Adds an act to scenario queue to wait for protocol upgrade
@@ -95,9 +95,16 @@ public interface Scenario { //UC WebSocketEventFactory
     Scenario perform(Executable executable, Duration initialDelay);
 
     /**
-     * Gets the list of scenario acts
+     * Plays scenario
      *
-     * @return acts
+     * @param actProcessor act processor
      */
-    List<Act> getActions();
+    void play(Consumer<Act> actProcessor);
+
+    /**
+     * Checks if all acts are performed
+     *
+     * @return check result
+     */
+    boolean isDone();
 }

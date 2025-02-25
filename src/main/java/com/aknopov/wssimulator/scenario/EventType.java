@@ -2,10 +2,11 @@ package com.aknopov.wssimulator.scenario;
 
 /**
  * Don't skip documentation!
- *
- * @author sasha
  */
+//UC Should event and act types be splitted?
 public enum EventType {
+    STARTED,
+    STOPPED,
     UPGRADE,
     OPEN,
     CLOSE,
@@ -13,5 +14,7 @@ public enum EventType {
     CLIENT_MESSAGE,
     WAIT,
     ACTION,
-    EXPECT
+    EXPECT,
+    RESTART,
+    ERROR
 }

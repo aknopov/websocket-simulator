@@ -1,22 +1,14 @@
 package com.aknopov.wssimulator.scenario;
 
+import java.lang.reflect.Executable;
 import java.time.Duration;
 
 /**
  * Single action in a scenario
+ *
+ * @param delay delay before performing ac
+ * @param eventType the act type
+ * @param executable action to perform
  */
-public interface Act { //UC to concrete class/record
-    /**
-     * Gets duration of delay before performing act
-     *
-     * @return duration
-     */
-    Duration getDelay();
-
-    /**
-     * Gets event type
-     *
-     * @return type
-     */
-    EventType getType();
+public record Act(Duration delay, EventType eventType, Executable executable) {
 }

@@ -1,19 +1,30 @@
 package com.aknopov.wssimulator.scenario;
 
-import java.lang.reflect.Executable;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.WebSocketSimulator;
 
 /**
  * Don't skip documentation!
  */
 public class ScenarioImpl implements Scenario {
+
+    private final Deque<Act> acts;
+    private final WebSocketSimulator simulator;
+
+    public ScenarioImpl(WebSocketSimulator simulator) {
+        this.simulator = simulator;
+        this.acts = new ArrayDeque<>();
+    }
+
     @Override
-    public Scenario expectProtocolUpgrade(Function<ProtocolUpgrade, Boolean> handshakeValidator, Duration waitPeriod) {
+    public Scenario expectProtocolUpgrade(Consumer<ProtocolUpgrade> upgradeValidator, Duration waitPeriod) {
+        acts.push(new Act(waitPeriod, EventType.UPGRADE, upgradeValidator));
         return this;
     }
 
@@ -24,6 +35,7 @@ public class ScenarioImpl implements Scenario {
 
     @Override
     public Scenario sendMessage(String message, Duration initialDelay) {
+        acts.add(new Act(initialDelay, EventType.ACTION, m -> simulator.sendTextMessage(message)));
         return this;
     }
 
@@ -47,23 +59,26 @@ public class ScenarioImpl implements Scenario {
         return this;
     }
 
-    @Override
-    public Scenario restartServer(Duration waitPeriod) {
-        return this;
-    }
+//    @Override
+//    public Scenario restartServer(Duration waitPeriod) {
+//        return this;
+//    }
 
     @Override
-    public Scenario perform(Executable executable, Duration initialDelay) {
+    public Scenario perform(Runnable runnable, Duration initialDelay) {
         return this;
     }
 
     @Override
     public void play(Consumer<Act> actProcessor) {
-        //UC
+        while (!acts.isEmpty()) {
+            Act next = acts.pop();
+            actProcessor.accept(next);
+        }
     }
 
     @Override
     public boolean isDone() {
-        return true;
+        return acts.isEmpty();
     }
 }

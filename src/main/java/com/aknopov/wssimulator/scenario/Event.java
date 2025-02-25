@@ -10,4 +10,7 @@ import java.time.Instant;
  * @param isCompleted whether the event has been completed
  */
 public record Event(Instant eventTime, EventType eventType, boolean isCompleted) {
+    public  Event(EventType eventType, boolean isCompleted) {
+        this(Instant.now(), eventType, isCompleted);
+    }
 }

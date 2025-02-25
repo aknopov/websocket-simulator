@@ -1,7 +1,6 @@
 package com.aknopov.wssimulator;
 
 import java.nio.ByteBuffer;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 
@@ -21,7 +20,7 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     private final History history = new History();
     private final WebSocketServer wsServer;
 
-    private Scenario scenario = new ScenarioImpl();
+    private Scenario scenario = new ScenarioImpl(this);
 
     /**
      * Creates simulator with given configuration
@@ -92,14 +91,14 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     }
 
     @Override
-    public void restart(Duration coolDownPeriodMs) {
-
+    public void sendTextMessage(String message) {
+//UC
     }
 
     private void playScenario() {
         scenario.play(act -> {
             try {
-                Thread.sleep(act.delay()
+                Thread.sleep(act.delay() //UC delay before or wait
                         .toMillis());
             }
             catch (InterruptedException e) {

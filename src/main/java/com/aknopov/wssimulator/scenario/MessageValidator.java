@@ -7,5 +7,11 @@ import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
  */
 @FunctionalInterface
 public interface MessageValidator {
-    boolean validate(WebSocketMessage request) throws ValidationException;
+    /**
+     * Checks message validity
+     *
+     * @param message the message
+     * @throws ValidationException if validation failed
+     */
+    void validate(WebSocketMessage message);
 }

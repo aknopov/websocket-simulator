@@ -1,7 +1,5 @@
 package com.aknopov.wssimulator;
 
-import java.time.Duration;
-
 import com.aknopov.wssimulator.scenario.History;
 import com.aknopov.wssimulator.scenario.Scenario;
 
@@ -51,9 +49,16 @@ public interface WebSocketSimulator {
     void stop();
 
     /**
-     * Restarts simulator and underlying WebSocket server on the same port
-     *
-     * @param coolDownPeriodMs waiting period before the new start
+     * Sends text message
+     * @param message the message
      */
-    void restart(Duration coolDownPeriodMs);
+    void sendTextMessage(String message);
+
+    //    /**
+//     * Restarts simulator and underlying WebSocket server on the same port
+//     *
+//     * @param coolDownPeriodMs waiting period before the new start
+//     */
+//TODO Needs `WebSocketServer::start(int port)`
+//     void restart(Duration coolDownPeriodMs);
 }

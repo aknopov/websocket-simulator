@@ -1,14 +1,15 @@
 package com.aknopov.wssimulator.scenario;
 
-import java.lang.reflect.Executable;
 import java.time.Duration;
+import java.util.function.Consumer;
 
 /**
  * Single action in a scenario
  *
- * @param delay delay before performing ac
+ * @param delay delay before performing the act
  * @param eventType the act type
- * @param executable action to perform
+ * @param consumer action to perform with an argument
  */
-public record Act(Duration delay, EventType eventType, Executable executable) {
+public record Act(Duration delay, EventType eventType, Consumer<?> consumer) {
+    public static final Consumer<Void> NO_ACT = x -> {};
 }

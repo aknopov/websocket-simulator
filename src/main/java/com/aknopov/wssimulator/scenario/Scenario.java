@@ -1,10 +1,8 @@
 package com.aknopov.wssimulator.scenario;
 
-import java.lang.reflect.Executable;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
 
@@ -16,11 +14,11 @@ public interface Scenario { //UC ref WebSocketEventFactory
     /**
      * Adds an act to scenario queue to wait for protocol upgrade
      *
-     * @param handshakeValidator function to validate handshake that return {@code true} if validation passed
+     * @param upgradeValidator  protocol upgrade validator that throws {@code ValidationException} if failed
      * @param waitPeriod wait period to receive the handshake
      * @return this instance
      */
-    Scenario expectProtocolUpgrade(Function<ProtocolUpgrade, Boolean> handshakeValidator, Duration waitPeriod);
+    Scenario expectProtocolUpgrade(Consumer<ProtocolUpgrade> upgradeValidator, Duration waitPeriod);
 
     /**
      * Adds an act to scenario queue to wait for web socket opening
@@ -75,24 +73,24 @@ public interface Scenario { //UC ref WebSocketEventFactory
      */
     Scenario closeConnection(int statusCode, Duration initialDelay);
 
-    /**
-     * Adds an act to scenario queue to restart the server
-     *
-     * @param waitPeriod delay before closing connection
-     *
-     * @return this instance
-     */
-    Scenario restartServer(Duration waitPeriod);
+//TODO Needs `WebSocketServer` refactoring
+//    /**
+//     * Adds an act to scenario queue to restart the server
+//     *
+//     * @param waitPeriod delay before closing connection
+//     *
+//     * @return this instance
+//     */
+//    Scenario restartServer(Duration waitPeriod);
 
     /**
      * Adds an act to scenario queue to perform arbitrary functionality.
      *
-     * @param executable an executable to run
+     * @param runnable code to run
      * @param initialDelay delay before closing connection
-     *
      * @return this instance
      */
-    Scenario perform(Executable executable, Duration initialDelay);
+    Scenario perform(Runnable runnable, Duration initialDelay);
 
     /**
      * Plays scenario

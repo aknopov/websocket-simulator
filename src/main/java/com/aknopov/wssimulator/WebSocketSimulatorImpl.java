@@ -1,8 +1,11 @@
 package com.aknopov.wssimulator;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.time.Instant;
+import java.time.Duration;
 import java.util.Map;
+
+import javax.annotation.Nullable;
 
 import com.aknopov.wssimulator.injection.ServiceLocator;
 import com.aknopov.wssimulator.scenario.Event;
@@ -19,6 +22,8 @@ import jakarta.websocket.CloseReason;
 public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener {
     private final History history = new History();
     private final WebSocketServer wsServer;
+    @Nullable
+    private SimulatorEndpoint endpoint;
 
     private Scenario scenario = new ScenarioImpl(this);
 
@@ -37,15 +42,15 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
         startServer(config);
     }
 
+    @SuppressWarnings("NullAway")
     private void startServer(SessionConfig config) {
         try {
             wsServer.start();
             wsServer.waitForStart(config.idleTimeout());
-            history.addEvent(new Event(Instant.now(), EventType.STARTED, true));
+            history.addEvent(Event.create(EventType.STARTED, true));
         }
         catch (Exception e) {
-            history.addEvent(new Event(Instant.now(), EventType.STARTED, false));
-            history.addEvent(new Event(Instant.now(), EventType.ERROR, true)); //UC where is the text?
+            history.addEvent(Event.error(e.getMessage()));
         }
     }
 
@@ -87,12 +92,37 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     public void stop() {
         wsServer.stop();
 
-        history.addEvent(new Event(Instant.now(), EventType.STOPPED, scenario.isDone()));
+        history.addEvent(Event.create(EventType.STOPPED, scenario.isDone()));
     }
 
     @Override
     public void sendTextMessage(String message) {
-//UC
+        try {
+            Utils.requireNonNull(endpoint)
+                    .sendTextMessage(message);
+            history.addEvent(Event.create(EventType.SERVER_MESSAGE, true, "Text message"));
+        }
+        catch (IllegalStateException e) {
+            history.addEvent(Event.error("Attempted to send text message before establishing connection"));
+        }
+        catch (IOException e) {
+            history.addEvent(Event.error("Can't send text: " + e.getMessage()));
+        }
+    }
+
+    @Override
+    public void sendBinaryMessage(ByteBuffer message) {
+        try {
+            Utils.requireNonNull(endpoint)
+                    .sendBinaryMessage(message);
+            history.addEvent(Event.create(EventType.SERVER_MESSAGE, true, "Binary message"));
+        }
+        catch (IllegalStateException e) {
+            history.addEvent(Event.error("Attempted to send binary message before establishing connection"));
+        }
+        catch (IOException e) {
+            history.addEvent(Event.error("Can't send binary: " + e.getMessage()));
+        }
     }
 
     private void playScenario() {
@@ -108,26 +138,70 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
             //UC
             switch (act.eventType()) {
                 case UPGRADE -> {
+                    // wait for `act.delay()` for handshake to happen
+                    // Get `ProtocolUpgrade protoUpgrade` instance
+                    //+record event
+                    history.addEvent(Event.create(EventType.UPGRADE, true));
+                    // act.consumer().accept(protoUpgrade);
+                    // record error on exception
                 }
                 case OPEN -> {
+                    // wait for `act.delay()` for connection to open
+                    //+record event
+                    history.addEvent(Event.create(EventType.OPEN, true));
+                    // on exception - record error
                 }
-                case CLOSE -> {
+                case CLIENT_CLOSE -> {
+                    // wait for `act.delay()` for connection to close
+                    //+record event
+                    history.addEvent(Event.create(EventType.CLIENT_CLOSE, true));
+                    // record error on exception
                 }
                 case SERVER_MESSAGE -> {
+                    // send message
+                    act.consumer().accept(null);
+                    //+record event
+                    history.addEvent(Event.create(EventType.SERVER_MESSAGE, true));
+                    // record error on exception
                 }
                 case CLIENT_MESSAGE -> {
+                    // wait for `act.delay()` for a message
+                    // get message
+                    //UC record event with content
+                    history.addEvent(Event.create(EventType.CLIENT_MESSAGE, true));
+                    // record error on exception
                 }
                 case WAIT -> {
+                    // wait for `act.delay()`
+                    act.consumer().accept(null);
+                    //+record event
+                    history.addEvent(Event.create(EventType.WAIT, true));
+                    // record error on exception
                 }
                 case ACTION -> {
+                    // wait for `act.delay()`
+                    act.consumer().accept(null);
+                    //+record event
+                    history.addEvent(Event.create(EventType.ACTION, true));
+                    // record error on exception
                 }
-                case EXPECT -> {
+                case IO_ERROR -> {
+                    // wait for `act.delay()` for the error
+                    // get error
+                    // validate: act.consumer().accept(error);
+                    history.addEvent(Event.create(EventType.IO_ERROR, true));
+                    // record error on exception
                 }
                 default -> {
                     // nothing
                 }
             }
         });
+    }
+
+    //UC
+    private void wait(Duration waitDuration) throws InterruptedException {
+        Thread.sleep(waitDuration.toMillis());
     }
 
     //
@@ -140,8 +214,8 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     }
 
     @Override
-    public void onOpen(Map<String, Object> context) {
-
+    public void onOpen(SimulatorEndpoint endpoint, Map<String, Object> context) {
+        this.endpoint = endpoint;
     }
 
     @Override

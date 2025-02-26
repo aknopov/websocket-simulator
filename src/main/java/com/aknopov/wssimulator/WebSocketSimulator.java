@@ -1,5 +1,7 @@
 package com.aknopov.wssimulator;
 
+import java.nio.ByteBuffer;
+
 import com.aknopov.wssimulator.scenario.History;
 import com.aknopov.wssimulator.scenario.Scenario;
 
@@ -53,6 +55,12 @@ public interface WebSocketSimulator {
      * @param message the message
      */
     void sendTextMessage(String message);
+
+    /**
+     * Sends binary message.
+     * @param message the message
+     */
+    void sendBinaryMessage(ByteBuffer message);
 
     //    /**
 //     * Restarts simulator and underlying WebSocket server on the same port

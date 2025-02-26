@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SessionConfig;
+import com.aknopov.wssimulator.SimulatorEndpoint;
 import com.aknopov.wssimulator.tyrus.WebSocketClient;
 import com.aknopov.wssimulator.tyrus.WebSocketServer;
 import com.aknopov.wssimulator.injection.ServiceLocator;
@@ -63,7 +64,7 @@ public final class Main {
         }
 
         @Override
-        public void onOpen(Map<String, Object> userProperties) {
+        public void onOpen(SimulatorEndpoint endpoint, Map<String, Object> userProperties) {
             logger.info("Connection opened. Properties have {} entries", userProperties.size());
         }
 

@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.util.function.Consumer;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
 
 /**
  * An interface to scenario
@@ -53,7 +54,7 @@ public interface Scenario { //UC ref WebSocketEventFactory
      * @param waitPeriod wait period to receive the message
      * @return this instance
      */
-    Scenario expectMessage(MessageValidator validator, Duration waitPeriod);
+    Scenario expectMessage(Consumer<WebSocketMessage> validator, Duration waitPeriod);
 
     /**
      * Adds an act to scenario queue to wait for web socket opening.<br/>
@@ -73,6 +74,15 @@ public interface Scenario { //UC ref WebSocketEventFactory
      */
     Scenario closeConnection(int statusCode, Duration initialDelay);
 
+    /**
+     * Adds an act to scenario to expect IO error.
+     *
+     * @param validator error validator
+     * @param waitPeriod wait period to receive the error
+     * @return this instance
+     */
+    Scenario expectIoError(Consumer<Throwable> validator, Duration waitPeriod);
+
 //TODO Needs `WebSocketServer` refactoring
 //    /**
 //     * Adds an act to scenario queue to restart the server
@@ -91,6 +101,14 @@ public interface Scenario { //UC ref WebSocketEventFactory
      * @return this instance
      */
     Scenario perform(Runnable runnable, Duration initialDelay);
+
+    /**
+     * Waits specified time
+     *
+     * @param waitPeriod wait period
+     * @return this instance
+     */
+    Scenario wait(Duration waitPeriod);
 
     /**
      * Plays scenario

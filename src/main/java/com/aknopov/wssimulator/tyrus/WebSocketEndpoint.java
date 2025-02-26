@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SessionConfig;
+import com.aknopov.wssimulator.SimulatorEndpoint;
 import com.aknopov.wssimulator.injection.ServiceLocator;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.Endpoint;
@@ -28,7 +29,7 @@ import jakarta.websocket.server.ServerEndpointConfig;
 /**
  * Implementation of web socket simulator endpoint tha works as a proxy to injected EventListener
  */
-public class WebSocketEndpoint extends Endpoint {
+public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketEndpoint.class);
 
     private final EventListener eventListener;
@@ -65,7 +66,7 @@ public class WebSocketEndpoint extends Endpoint {
 
         // session.getUserProperties().put("started", true); // an example of storing state
 
-        eventListener.onOpen(session.getUserProperties());
+        eventListener.onOpen(this, session.getUserProperties());
     }
 
     @Override
@@ -87,12 +88,7 @@ public class WebSocketEndpoint extends Endpoint {
         eventListener.onBinaryMessage(message);
     }
 
-    /**
-     * Sends whole text message if connection is opened.
-     *
-     * @param message the message
-     * @throws IOException if there is a problem delivering message
-     */
+    @Override
     public void sendTextMessage(String message) throws IOException {
         if (session != null && session.isOpen()) {
             logger.debug("Sending text message");
@@ -101,12 +97,7 @@ public class WebSocketEndpoint extends Endpoint {
         }
     }
 
-    /**
-     * Sends whole binary message if connection is opened.
-     *
-     * @param message the message
-     * @throws IOException if there is a problem delivering message
-     */
+    @Override
     public void sendBinaryMessage(ByteBuffer message) throws IOException {
         if (session != null && session.isOpen()) {
             logger.debug("Sending binary message");
@@ -115,11 +106,7 @@ public class WebSocketEndpoint extends Endpoint {
         }
     }
 
-    /**
-     * Closes connection.
-     *
-     * @throws IOException if there was an error closing the connection.
-     */
+    @Override
     public void closeConnection() throws IOException {
         if (session != null && session.isOpen()) {
             session.close();

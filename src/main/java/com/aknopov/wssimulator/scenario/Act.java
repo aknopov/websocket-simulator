@@ -11,5 +11,5 @@ import java.util.function.Consumer;
  * @param consumer action to perform with an argument
  */
 public record Act(Duration delay, EventType eventType, Consumer<?> consumer) {
-    public static final Consumer<Void> NO_ACT = x -> {};
+    public static final Consumer<Void> VOID_ACT = x -> {};
 }

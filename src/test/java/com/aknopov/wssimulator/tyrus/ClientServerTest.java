@@ -8,6 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.SimulatorEndpoint;
 import jakarta.websocket.CloseReason;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +39,7 @@ public class ClientServerTest extends BaseTest {
         ArgumentCaptor<ProtocolUpgrade> handshakeCaptor = ArgumentCaptor.forClass(ProtocolUpgrade.class);
         InOrder inOrder = inOrder(mockListener);
         inOrder.verify(mockListener).onHandshake(handshakeCaptor.capture());
-        inOrder.verify(mockListener, times(2)).onOpen(anyMap());
+        inOrder.verify(mockListener, times(2)).onOpen(any(SimulatorEndpoint.class), anyMap());
         inOrder.verify(mockListener).onTextMessage(TEXT_MESSAGE);
         inOrder.verify(mockListener).onBinaryMessage(BINARY_MESSAGE);
         inOrder.verify(mockListener, atLeastOnce()).onClose(any(CloseReason.class));

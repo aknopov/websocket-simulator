@@ -20,9 +20,10 @@ public interface EventListener {
     /**
      * Callback on WebSocket "open" event
      *
+     * @param endpoint simulator endpoint, useful for servers
      * @param context websocket context parameters
      */
-    void onOpen(Map<String, Object> context);
+    void onOpen(SimulatorEndpoint endpoint, Map<String, Object> context);
 
     /**
      * Callback on WebSocket "close" event

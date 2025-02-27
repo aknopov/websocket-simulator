@@ -3,7 +3,9 @@ package com.aknopov.wssimulator;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
@@ -12,7 +14,12 @@ import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
 import com.aknopov.wssimulator.scenario.History;
 import com.aknopov.wssimulator.scenario.Scenario;
+import com.aknopov.wssimulator.scenario.ScenarioException;
 import com.aknopov.wssimulator.scenario.ScenarioImpl;
+import com.aknopov.wssimulator.scenario.ValidationException;
+import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
+import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
+import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
 import com.aknopov.wssimulator.tyrus.WebSocketServer;
 import jakarta.websocket.CloseReason;
 
@@ -24,6 +31,12 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     private final WebSocketServer wsServer;
     @Nullable
     private SimulatorEndpoint endpoint;
+    private final Map<EventType, ResettableLock<?>> eventLocks = Map.of(
+            EventType.UPGRADE, new ResettableLock<ProtocolUpgrade>(),
+            EventType.OPEN, new ResettableLock<SimulatorEndpoint>(),
+            EventType.CLIENT_CLOSE, new ResettableLock<CloseReason>(),
+            EventType.CLIENT_MESSAGE, new ResettableLock<WebSocketMessage>(),
+            EventType.IO_ERROR, new ResettableLock<Throwable>());
 
     private Scenario scenario = new ScenarioImpl(this);
 
@@ -127,81 +140,102 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
 
     private void playScenario() {
         scenario.play(act -> {
-            try {
-                Thread.sleep(act.delay() //UC delay before or wait
-                        .toMillis());
-            }
-            catch (InterruptedException e) {
-                //Intentionally empty
-            }
-
-            //UC
             switch (act.eventType()) {
-                case UPGRADE -> {
-                    // wait for `act.delay()` for handshake to happen
-                    // Get `ProtocolUpgrade protoUpgrade` instance
-                    //+record event
+                case UPGRADE -> process(() -> {
+                    ProtocolUpgrade protoUpgrade = waitFor(EventType.UPGRADE, act.delay(), ProtocolUpgrade.class);
                     history.addEvent(Event.create(EventType.UPGRADE, true));
-                    // act.consumer().accept(protoUpgrade);
-                    // record error on exception
-                }
-                case OPEN -> {
-                    // wait for `act.delay()` for connection to open
-                    //+record event
+                    consumeData(act.consumer(), protoUpgrade);
+                });
+                case OPEN -> process(() -> {
+                    SimulatorEndpoint endpoint = waitFor(EventType.OPEN, act.delay(), SimulatorEndpoint.class);
+                    this.endpoint = endpoint;
                     history.addEvent(Event.create(EventType.OPEN, true));
-                    // on exception - record error
-                }
+                    consumeData(act.consumer(), endpoint); //UC
+                });
                 case CLIENT_CLOSE -> {
-                    // wait for `act.delay()` for connection to close
-                    //+record event
+                    CloseReason reason = waitFor(EventType.CLIENT_CLOSE, act.delay(), CloseReason.class);
                     history.addEvent(Event.create(EventType.CLIENT_CLOSE, true));
-                    // record error on exception
+                    consumeData(act.consumer(), reason);
                 }
-                case SERVER_MESSAGE -> {
-                    // send message
-                    act.consumer().accept(null);
-                    //+record event
+                case SERVER_MESSAGE -> process(() -> {
+                    consumeData(act.consumer(), null);
                     history.addEvent(Event.create(EventType.SERVER_MESSAGE, true));
-                    // record error on exception
-                }
-                case CLIENT_MESSAGE -> {
-                    // wait for `act.delay()` for a message
-                    // get message
-                    //UC record event with content
+                });
+                case CLIENT_MESSAGE -> process(() -> {
+                    WebSocketMessage message = waitFor(EventType.CLIENT_MESSAGE, act.delay(), WebSocketMessage.class);
                     history.addEvent(Event.create(EventType.CLIENT_MESSAGE, true));
-                    // record error on exception
-                }
-                case WAIT -> {
-                    // wait for `act.delay()`
-                    act.consumer().accept(null);
-                    //+record event
+                    consumeData(act.consumer(), message);
+                });
+                case WAIT -> process(() -> {
+                    wait(act.delay());
                     history.addEvent(Event.create(EventType.WAIT, true));
-                    // record error on exception
-                }
-                case ACTION -> {
-                    // wait for `act.delay()`
-                    act.consumer().accept(null);
-                    //+record event
+                });
+                case ACTION -> process(() -> {
+                    wait(act.delay());
                     history.addEvent(Event.create(EventType.ACTION, true));
-                    // record error on exception
-                }
-                case IO_ERROR -> {
-                    // wait for `act.delay()` for the error
-                    // get error
-                    // validate: act.consumer().accept(error);
+                    consumeData(act.consumer(), null);
+                });
+                case IO_ERROR -> process(() -> {
+                    Throwable error = waitFor(EventType.IO_ERROR, act.delay(), Throwable.class);
                     history.addEvent(Event.create(EventType.IO_ERROR, true));
-                    // record error on exception
-                }
+                    consumeData(act.consumer(), error);
+                });
                 default -> {
-                    // nothing
+                    history.addEvent(Event.error("Internal error, act " + act.eventType() + " is not processable"));
                 }
             }
         });
     }
 
-    //UC
-    private void wait(Duration waitDuration) throws InterruptedException {
-        Thread.sleep(waitDuration.toMillis());
+    private void process(Runnable runnable) {
+        try {
+            runnable.run();
+        }
+        catch (NullPointerException ex) {
+            history.addEvent(Event.error("NPE at " + Arrays.toString(ex.getStackTrace())));
+        }
+        catch (ScenarioException ex) {
+            history.addEvent(Event.error("Expected action didn't happen at" + Arrays.toString(ex.getStackTrace())));
+        }
+        catch (ValidationException ex) {
+            history.addEvent(Event.error("Expectation wasn't fulfilled: " + ex.getMessage()));
+        }
+    }
+
+    private static void wait(Duration waitDuration) {
+        try {
+            Thread.sleep(waitDuration.toMillis());
+        }
+        catch (InterruptedException e) {
+            throw new ScenarioException("Wait interrupted");
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "NullAway"})
+    private <T> T waitFor(EventType eventType, Duration waitDuration, Class<T> unused) {
+        try {
+            return Utils.requireNonNull((ResettableLock<T>)eventLocks.get(eventType))
+                    .await(waitDuration);
+        }
+        catch (InterruptedException e) {
+            throw new ScenarioException("Wait interrupted");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> void releaseEvent(EventType eventType, T payload) {
+        try {
+            Utils.requireNonNull((ResettableLock<T>)eventLocks.get(eventType))
+                    .release(payload);
+        }
+        catch (InterruptedException e) {
+            throw new ScenarioException("Release interrupted");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> void consumeData(Consumer<?> consumer, @Nullable T data) {
+        ((Consumer<T>)consumer).accept(data);
     }
 
     //
@@ -210,31 +244,31 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
 
     @Override
     public void onHandshake(ProtocolUpgrade handshake) {
-
+        releaseEvent(EventType.UPGRADE, handshake);
     }
 
     @Override
     public void onOpen(SimulatorEndpoint endpoint, Map<String, Object> context) {
-        this.endpoint = endpoint;
+        releaseEvent(EventType.OPEN, endpoint);
     }
 
     @Override
     public void onClose(CloseReason closeReason) {
-
+        releaseEvent(EventType.CLIENT_CLOSE, closeReason);
     }
 
     @Override
     public void onError(Throwable error) {
-
+        releaseEvent(EventType.IO_ERROR, error);
     }
 
     @Override
     public void onTextMessage(String message) {
-
+        releaseEvent(EventType.CLIENT_MESSAGE, new TextWebSocketMessage(message));
     }
 
     @Override
     public void onBinaryMessage(ByteBuffer message) {
-
+        releaseEvent(EventType.CLIENT_MESSAGE, new BinaryWebSocketMessage(message));
     }
 }

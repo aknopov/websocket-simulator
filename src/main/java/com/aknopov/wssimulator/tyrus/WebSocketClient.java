@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jakarta.websocket.ClientEndpointConfig;
+import jakarta.websocket.CloseReason.CloseCodes;
 import jakarta.websocket.DeploymentException;
 
 /**
@@ -60,12 +61,11 @@ public class WebSocketClient {
 
     /**
      * Stops web socket client and closes connection.
-     * @throws IOException if there was a connection error closing the connection.
      */
-    public void stop() throws IOException {
+    public void stop() {
         assumeConnected();
         Objects.requireNonNull(endpoint)
-                .closeConnection();
+                .closeConnection(CloseCodes.NORMAL_CLOSURE);
         endpoint = null;
     }
 
@@ -74,10 +74,9 @@ public class WebSocketClient {
      *
      * @param message the message
      *
-     * @throws IOException if there is a problem delivering the messag
      * @throws IllegalStateException if connection is not opened
      */
-    public void sendTextMessage(String message) throws IOException {
+    public void sendTextMessage(String message) {
         assumeConnected();
         Objects.requireNonNull(endpoint)
                 .sendTextMessage(message);
@@ -88,10 +87,9 @@ public class WebSocketClient {
      *
      * @param message the message
      *
-     * @throws IOException if there is a problem delivering the messag
      * @throws IllegalStateException if connection is not opened
      */
-    public void sendBinaryMessage(ByteBuffer message) throws IOException {
+    public void sendBinaryMessage(ByteBuffer message) {
         assumeConnected();
         Objects.requireNonNull(endpoint)
                 .sendBinaryMessage(message);

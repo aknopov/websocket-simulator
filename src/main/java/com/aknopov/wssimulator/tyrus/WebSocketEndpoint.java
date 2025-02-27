@@ -1,6 +1,7 @@
 package com.aknopov.wssimulator.tyrus;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -17,6 +18,7 @@ import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.SimulatorEndpoint;
 import com.aknopov.wssimulator.injection.ServiceLocator;
 import jakarta.websocket.CloseReason;
+import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.HandshakeResponse;
@@ -89,29 +91,44 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     }
 
     @Override
-    public void sendTextMessage(String message) throws IOException {
+    public void sendTextMessage(String message) {
         if (session != null && session.isOpen()) {
             logger.debug("Sending text message");
-            session.getBasicRemote()
-                    .sendText(message);
+            try {
+                session.getBasicRemote().sendText(message);
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 
     @Override
-    public void sendBinaryMessage(ByteBuffer message) throws IOException {
+    public void sendBinaryMessage(ByteBuffer message) {
         if (session != null && session.isOpen()) {
             logger.debug("Sending binary message");
-            session.getBasicRemote()
-                    .sendBinary(message);
+            try {
+                session.getBasicRemote().sendBinary(message);
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 
     @Override
-    public void closeConnection() throws IOException {
-        if (session != null && session.isOpen()) {
-            session.close();
+    public void closeConnection(CloseCode closeCode) {
+        try {
+            if (session != null && session.isOpen()) {
+                session.close(new CloseReason(closeCode, ""));
+            }
         }
-        session = null;
+        catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+        finally {
+            session = null;
+        }
     }
 
     /**

@@ -42,11 +42,10 @@ public class TextWebSocketMessage extends WebSocketMessage
         {
             return true;
         }
-        if (!(o instanceof TextWebSocketMessage))
+        if (!(o instanceof TextWebSocketMessage that))
         {
             return false;
         }
-        TextWebSocketMessage that = (TextWebSocketMessage)o;
         return Objects.equals(text, that.text);
     }
 

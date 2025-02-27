@@ -32,10 +32,8 @@ public class ResettableLock<T> {
 
     /**
      * Releases lock in the waiting thread and sets the payload
-     *
-     * @throws InterruptedException – if any thread interrupted the current thread
      */
-    public void release(T payload) throws InterruptedException {
+    public void release(T payload) {
         synchronized(this) {
             this.payload = payload;
             this.notifyAll();

@@ -12,11 +12,10 @@ class EventTest {
         Instant anInstant = Instant.now();
         String description = " some text";
 
-        Event event = new Event(anInstant, EventType.OPEN, false, description);
+        Event event = new Event(anInstant, EventType.OPEN, description);
 
         assertEquals(anInstant, event.eventTime());
         assertEquals(EventType.OPEN, event.eventType());
-        assertFalse(event.isCompleted());
         assertEquals(description, event.description());
     }
 }

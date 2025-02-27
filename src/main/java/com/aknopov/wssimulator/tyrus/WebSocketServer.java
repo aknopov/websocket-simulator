@@ -59,11 +59,11 @@ public class WebSocketServer {
     /**
      * Starts WebSocket server asynchronously
      *
-     * @throws Exception from creating and running the client
+     * @throws IllegalStateException from creating and running the client
      */
-    public void start() throws Exception {
+    public void start() {
         if (stopLatch.getCount() == 0) {
-            throw new IllegalStateException("Server is not of initial state and should be stopped");
+            throw new IllegalStateException("Server is neither in initial state nor stopped");
         }
         logger.debug("Starting WS server");
         new Thread(this::runServer).start();
@@ -78,7 +78,7 @@ public class WebSocketServer {
     }
 
     /**
-     * Gets the port on which server is running ()server should be started).
+     * Gets the port on which server is running.
      * @return port number
      */
     public int getPort() {

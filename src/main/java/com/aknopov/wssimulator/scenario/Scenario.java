@@ -6,11 +6,12 @@ import java.util.function.Consumer;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import jakarta.websocket.CloseReason.CloseCode;
 
 /**
  * An interface to scenario
  */
-public interface Scenario { //UC ref WebSocketEventFactory
+public interface Scenario {
 
     /**
      * Adds an act to scenario queue to wait for protocol upgrade
@@ -68,11 +69,11 @@ public interface Scenario { //UC ref WebSocketEventFactory
     /**
      * Adds an act to scenario queue to close connection
      *
-     * @param statusCode status code for closing connection
+     * @param closeCode code for closing connection
      * @param initialDelay delay before closing connection
      * @return this instance
      */
-    Scenario closeConnection(int statusCode, Duration initialDelay);
+    Scenario closeConnection(CloseCode closeCode, Duration initialDelay);
 
     /**
      * Adds an act to scenario to expect IO error.
@@ -115,7 +116,7 @@ public interface Scenario { //UC ref WebSocketEventFactory
      *
      * @param actProcessor act processor
      */
-    void play(Consumer<Act> actProcessor);
+    void play(Consumer<Act<?>> actProcessor);
 
     /**
      * Checks if all acts are performed

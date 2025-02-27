@@ -68,12 +68,8 @@ class WebSocketSimulatorImplTest {
         assertEquals(2, events.size());
         assertEquals(EventType.STARTED, events.get(0)
                 .eventType());
-        assertTrue(events.get(0)
-                .isCompleted());
         assertEquals(EventType.STOPPED, events.get(1)
                 .eventType());
-        assertTrue(events.get(1)
-                .isCompleted());
 
         simulator.resetHistory();
         assertEquals(0, simulator.getHistory()

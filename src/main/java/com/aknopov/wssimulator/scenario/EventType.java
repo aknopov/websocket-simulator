@@ -1,9 +1,8 @@
 package com.aknopov.wssimulator.scenario;
 
 /**
- * Don't skip documentation!
+ * Event types for actions and reactions
  */
-//UC Should event and act types be split?
 public enum EventType {
     STARTED,
     STOPPED,

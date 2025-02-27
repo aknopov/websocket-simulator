@@ -18,12 +18,21 @@ public interface WebSocketSimulator {
 
     /**
      * Sets simulator scenario
+     *
      * @param scenario new scenario
      */
     void setScenario(Scenario scenario);
 
     /**
+     * Sets the only simulator endpoint to be able to act on server side
+     *
+     * @param endpoint the endpoint
+     */
+    void setEndpoint(SimulatorEndpoint endpoint);
+
+    /**
      * Gets scenario play history
+     *
      * @return the history
      */
     History getHistory();
@@ -52,17 +61,19 @@ public interface WebSocketSimulator {
 
     /**
      * Sends text message
+     *
      * @param message the message
      */
     void sendTextMessage(String message);
 
     /**
      * Sends binary message.
+     *
      * @param message the message
      */
     void sendBinaryMessage(ByteBuffer message);
 
-    //    /**
+//    /**
 //     * Restarts simulator and underlying WebSocket server on the same port
 //     *
 //     * @param coolDownPeriodMs waiting period before the new start

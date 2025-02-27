@@ -43,11 +43,10 @@ public class BinaryWebSocketMessage extends WebSocketMessage
         {
             return true;
         }
-        if (!(o instanceof BinaryWebSocketMessage))
+        if (!(o instanceof BinaryWebSocketMessage that))
         {
             return false;
         }
-        BinaryWebSocketMessage that = (BinaryWebSocketMessage)o;
         return Objects.equals(data, that.data);
     }
 

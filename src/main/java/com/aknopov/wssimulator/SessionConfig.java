@@ -4,10 +4,6 @@ import java.time.Duration;
 
 /**
  * Configuration for creating WebSocket endpoint
- */
-
-/**
- * Configuration for creating WebSocket endpoint
  *
  * @param path server endpoint path
  * @param idleTimeout connection idle timeout

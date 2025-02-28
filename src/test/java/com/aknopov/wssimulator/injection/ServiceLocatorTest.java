@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ServiceLocatorTest extends BaseTest {
@@ -32,6 +33,9 @@ class ServiceLocatorTest extends BaseTest {
         public String getContent() {
             return content;
         }
+    }
+
+    private record TestRecord(String content) implements TestInterface {
     }
 
     @Test
@@ -74,5 +78,12 @@ class ServiceLocatorTest extends BaseTest {
         assertSame(obj0, obj1);
         TestInterface obj2 = ServiceLocator.findOrCreate(TestInterface.class);
         assertSame(obj0, obj2);
+    }
+
+    @Test
+    void testMandatoryDefaultConstructor() {
+        ServiceLocator.bind(TestRecord.class, TestInterface.class);
+
+        assertThrows(IllegalStateException.class, () -> ServiceLocator.findOrCreate(TestInterface.class));
     }
 }

@@ -62,7 +62,7 @@ public class WebSocketServer {
      * @throws IllegalStateException from creating and running the client
      */
     public void start() {
-        if (stopLatch.getCount() == 0) {
+        if (startLatch.getCount() == 0) {
             throw new IllegalStateException("Server is neither in initial state nor stopped");
         }
         logger.debug("Starting WS server");

@@ -1,0 +1,72 @@
+package com.aknopov.wssimulator.scenario;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.WebSocketSimulator;
+import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import jakarta.websocket.CloseReason;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+
+class ScenarioImplTest {
+
+    private final static Duration TEST_DURATION = Duration.ofSeconds(123);
+    private final static EventType[] ACT_TYPES = {
+            EventType.UPGRADE,
+            EventType.OPEN,
+            EventType.SERVER_MESSAGE,
+            EventType.CLIENT_MESSAGE,
+            EventType.ACTION,
+            EventType.SERVER_MESSAGE,
+            EventType.IO_ERROR,
+            EventType.WAIT,
+            EventType.SERVER_CLOSE,
+            EventType.CLIENT_CLOSE
+    };
+
+    private final WebSocketSimulator mockSimulator = mock(WebSocketSimulator.class);
+    private final Scenario scenario = new ScenarioImpl(mockSimulator);
+
+    private void validateText(WebSocketMessage message) {
+    }
+
+    private void validateUpgrade(ProtocolUpgrade protocolUpgrade) {
+    }
+
+    @BeforeEach
+    void setUp() {
+        scenario
+                .expectProtocolUpgrade(this::validateUpgrade, TEST_DURATION)
+                .expectConnectionOpened(TEST_DURATION)
+                .sendMessage("Hello", TEST_DURATION)
+                .expectMessage(this::validateText, TEST_DURATION)
+                .perform(() -> {}, TEST_DURATION)
+                .sendMessage(ByteBuffer.wrap("Hello".getBytes(StandardCharsets.UTF_8)), TEST_DURATION)
+                .expectIoError(Throwable::getCause, TEST_DURATION)
+                .wait(TEST_DURATION)
+                .closeConnection(CloseReason.CloseCodes.PROTOCOL_ERROR, TEST_DURATION)
+                .expectConnectionClosed(TEST_DURATION);
+    }
+
+    @Test
+    void testSequencing() {
+        assertFalse(scenario.isDone());
+
+        AtomicInteger idx = new AtomicInteger();
+        scenario.play((act) -> {
+            assertEquals(ACT_TYPES[idx.get()], act.eventType());
+            assertEquals(TEST_DURATION, act.delay());
+            idx.getAndIncrement();
+        });
+
+        assertTrue(scenario.isDone());
+    }
+}

@@ -1,8 +1,9 @@
 package com.aknopov.wssimulator;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
 import com.aknopov.wssimulator.scenario.Scenario;
 import com.aknopov.wssimulator.scenario.ValidationException;
@@ -21,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 class WebSocketSimulatorImplTest {
     private static final long MAXIMUM_TEST_WAIT_TIME_MS = 3_000L;
@@ -32,11 +35,12 @@ class WebSocketSimulatorImplTest {
     private static final int PORT = 5005;
     private static final String TEXT_MESSAGE = "Hello!";
     private static final ByteBuffer BINARY_MESSAGE =
-            ByteBuffer.wrap("Binary message".getBytes(Charset.defaultCharset()));
+            ByteBuffer.wrap("Binary message".getBytes(StandardCharsets.UTF_8));
 
     private static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
     private static final int UNAUTHORIZED_CODE = 401;
 
+    private SimulatorEndpoint mockEndpoint = mock(SimulatorEndpoint.class);
     private WebSocketSimulatorImpl simulator;
 
     @AfterEach
@@ -85,6 +89,37 @@ class WebSocketSimulatorImplTest {
         Scenario mockScenario = mock(Scenario.class);
         simulator.setScenario(mockScenario);
         assertSame(mockScenario, simulator.getScenario());
+    }
+
+    @Test
+    void testSendTextMessage() {
+        simulator = new WebSocketSimulatorImpl(0, config);
+        simulator.setEndpoint(mockEndpoint);
+
+        simulator.sendTextMessage(TEXT_MESSAGE);
+
+        verify(mockEndpoint).sendTextMessage(TEXT_MESSAGE);
+        List<Event> events = simulator.getHistory().getEvents();
+        assertEquals(2, events.size());
+        assertEquals(EventType.STARTED, events.get(0).eventType());
+        assertEquals(EventType.SERVER_MESSAGE, events.get(1).eventType());
+        assertEquals("Text message", events.get(1).description());
+    }
+
+
+    @Test
+    void testSendBinaryMessage() {
+        simulator = new WebSocketSimulatorImpl(0, config);
+        simulator.setEndpoint(mockEndpoint);
+
+        simulator.sendBinaryMessage(BINARY_MESSAGE);
+
+        verify(mockEndpoint).sendBinaryMessage(BINARY_MESSAGE);
+        List<Event> events = simulator.getHistory().getEvents();
+        assertEquals(2, events.size());
+        assertEquals(EventType.STARTED, events.get(0).eventType());
+        assertEquals(EventType.SERVER_MESSAGE, events.get(1).eventType());
+        assertEquals("Binary message", events.get(1).description());
     }
 
     @Test

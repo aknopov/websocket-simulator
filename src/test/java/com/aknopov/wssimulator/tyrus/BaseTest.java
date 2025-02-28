@@ -1,7 +1,7 @@
 package com.aknopov.wssimulator.tyrus;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +18,7 @@ public class BaseTest {
     protected static final int BUFFER_SIZE = 1234;
     protected static final String TEXT_MESSAGE = "Hello!";
     protected static final ByteBuffer BINARY_MESSAGE =
-            ByteBuffer.wrap("Binary message".getBytes(Charset.defaultCharset()));
+            ByteBuffer.wrap("Binary message".getBytes(StandardCharsets.UTF_8));
 
 
     protected static final EventListener mockListener = mock(EventListener.class);

@@ -2,6 +2,7 @@ package com.aknopov;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Scanner;
@@ -42,7 +43,7 @@ public final class Main {
         WebSocketClient client = new WebSocketClient("ws://localhost:" + server.getPort() + "/path");
         client.start();
         client.sendTextMessage("Hello from auto!");
-        client.sendBinaryMessage(ByteBuffer.wrap("Binary message".getBytes(Charset.defaultCharset())));
+        client.sendBinaryMessage(ByteBuffer.wrap("Binary message".getBytes(StandardCharsets.UTF_8)));
         client.stop();
 
         try (Scanner scanner = new Scanner(System.in, Charset.defaultCharset())) {

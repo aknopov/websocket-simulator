@@ -3,7 +3,7 @@ package com.aknopov.wssimulator;
 import javax.annotation.Nullable;
 
 /**
- *A bunch of utility functions
+ * A bunch of utility functions
  */
 public final class Utils {
     private Utils() {

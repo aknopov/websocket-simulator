@@ -203,7 +203,7 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
         try {
             runnable.run();
         }
-        catch (NullPointerException ex) {
+        catch (NullPointerException ex) { // probably waiting for an object timed out
             history.addEvent(Event.error("NPE at " + Arrays.toString(ex.getStackTrace())));
         }
         catch (ScenarioException ex) {
@@ -228,9 +228,9 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
 
     @SuppressWarnings({"unchecked", "NullAway"})
     private <T> T waitFor(EventType eventType, Duration waitDuration, Class<T> unused) {
+        ResettableLock<T> lock = (ResettableLock<T>)Utils.requireNonNull(eventLocks.get(eventType));
         try {
-            return Utils.requireNonNull((ResettableLock<T>)eventLocks.get(eventType))
-                    .await(waitDuration);
+            return Utils.requireNonNull(lock.await(waitDuration));
         }
         catch (InterruptedException e) {
             throw new ScenarioException("Wait interrupted");

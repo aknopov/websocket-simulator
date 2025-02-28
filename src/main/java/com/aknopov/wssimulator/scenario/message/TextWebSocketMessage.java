@@ -5,53 +5,44 @@ import java.util.Objects;
 
 import javax.annotation.Nullable;
 
-public class TextWebSocketMessage extends WebSocketMessage
-{
+public class TextWebSocketMessage extends WebSocketMessage {
     private final String text;
 
-    public TextWebSocketMessage(String text)
-    {
+    public TextWebSocketMessage(String text) {
         super(MessageType.TEXT);
         this.text = text;
     }
 
     @Nullable
     @Override
-    public String getMessageText()
-    {
+    public String getMessageText() {
         return text;
     }
 
     @Nullable
     @Override
-    public ByteBuffer getMessageBytes()
-    {
+    public ByteBuffer getMessageBytes() {
         return null;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "TextWebSocketMessage{" + "text='" + text + '\'' + '}';
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
-        {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-        if (!(o instanceof TextWebSocketMessage that))
-        {
+        if (!(o instanceof TextWebSocketMessage that)) {
             return false;
         }
         return Objects.equals(text, that.text);
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return Objects.hash(getMessageType(), text);
     }
 }

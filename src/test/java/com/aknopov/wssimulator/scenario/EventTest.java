@@ -18,4 +18,15 @@ class EventTest {
         assertEquals(EventType.OPEN, event.eventType());
         assertEquals(description, event.description());
     }
+
+    @Test
+    void testErrorCreation() {
+        Instant anInstant = Instant.now();
+        String description = " some text";
+
+        Event event = Event.error(description);
+
+        assertEquals(EventType.ERROR, event.eventType());
+        assertEquals(description, event.description());
+    }
 }

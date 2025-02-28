@@ -27,13 +27,13 @@ public class ScenarioImpl implements Scenario {
 
     @Override
     public Scenario expectProtocolUpgrade(Consumer<ProtocolUpgrade> upgradeValidator, Duration waitPeriod) {
-        acts.push(new Act<>(waitPeriod, EventType.UPGRADE, upgradeValidator));
+        acts.add(new Act<>(waitPeriod, EventType.UPGRADE, upgradeValidator));
         return this;
     }
 
     @Override
     public Scenario expectConnectionOpened(Duration waitPeriod) {
-        acts.push(new Act<>(waitPeriod, EventType.OPEN, simulator::setEndpoint));
+        acts.add(new Act<>(waitPeriod, EventType.OPEN, simulator::setEndpoint));
         return this;
     }
 

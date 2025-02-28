@@ -18,7 +18,7 @@ class WebSocketServerTest extends BaseTest {
     }
 
     @Test
-    void testRestart() throws Exception {
+    void testRestart() {
         server.start();
         server.waitForStart(Duration.ofSeconds(1));
         int port1 = server.getPort();
@@ -33,9 +33,17 @@ class WebSocketServerTest extends BaseTest {
     }
 
     @Test
-    void testWaitForStart() throws Exception {
+    void testWaitForStart() {
         server.start();
         assertFalse(server.waitForStart(Duration.ofNanos(10000)));
         assertTrue(server.waitForStart(Duration.ofSeconds(1)));
+    }
+
+    @Test
+    void testErrorOnDoubleStart() {
+        server.start();
+        server.waitForStart(Duration.ofSeconds(1));
+
+        assertThrows(IllegalStateException.class, () -> server.start());
     }
 }

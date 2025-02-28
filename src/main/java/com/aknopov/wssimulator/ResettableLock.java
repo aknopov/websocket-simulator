@@ -1,8 +1,7 @@
 package com.aknopov.wssimulator;
 
 import java.time.Duration;
-
-import javax.annotation.Nullable;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Reusable synchronization object that waits for an event that can produce an object
@@ -10,8 +9,7 @@ import javax.annotation.Nullable;
  * @param <T> object type
  */
 public class ResettableLock<T> {
-    @Nullable
-    private T payload;
+    private final AtomicReference<T> refPayload = new AtomicReference<>();
 
     /**
      * Causes the current thread to wait until it is awakened.
@@ -20,14 +18,18 @@ public class ResettableLock<T> {
      * @param waitDuration the maximum time to wait
      * @return the object waited for or {@code NULL} is timeout expired
      * @throws InterruptedException – if any thread interrupted the current thread
+     * @throws TimeoutException if data wasn't released before expiry
      */
-    @Nullable
     public T await(Duration waitDuration) throws InterruptedException {
-        payload = null;
+        refPayload.set(null);
         synchronized(this) {
             this.wait(waitDuration.toMillis());
         }
-        return payload;
+        T retVal = refPayload.get();
+        if (retVal == null) {
+            throw new TimeoutException("Data wasn't released in " + waitDuration.toMillis() + " mses");
+        }
+        return retVal;
     }
 
     /**
@@ -35,7 +37,7 @@ public class ResettableLock<T> {
      */
     public void release(T payload) {
         synchronized(this) {
-            this.payload = payload;
+            refPayload.set(payload);
             this.notifyAll();
         }
     }

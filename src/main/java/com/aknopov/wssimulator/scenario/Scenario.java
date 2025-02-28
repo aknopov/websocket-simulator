@@ -58,16 +58,16 @@ public interface Scenario {
     Scenario expectMessage(Consumer<WebSocketMessage> validator, Duration waitPeriod);
 
     /**
-     * Adds an act to scenario queue to wait for web socket opening.<br/>
-     * <strong>Note: Implementation library can can perform this operation at its own time.</strong>
+     * Adds an act to scenario queue to wait for web socket close from client.<br/>
      *
+     * @param validator close reason validator
      * @param waitPeriod maximum wait time
      * @return this instance
      */
-    Scenario expectConnectionClosed(Duration waitPeriod);
+    Scenario expectConnectionClosed(Consumer<CloseCode> validator, Duration waitPeriod);
 
     /**
-     * Adds an act to scenario queue to close connection
+     * Adds an act to scenario queue to close connection to client.
      *
      * @param closeCode code for closing connection
      * @param initialDelay delay before closing connection
@@ -117,6 +117,11 @@ public interface Scenario {
      * @param actProcessor act processor
      */
     void play(Consumer<Act<?>> actProcessor);
+
+    /**
+     * Requests to stop executing scenario
+     */
+    void requestStop();
 
     /**
      * Checks if all acts are performed

@@ -41,6 +41,9 @@ class ScenarioImplTest {
     private void validateUpgrade(ProtocolUpgrade protocolUpgrade) {
     }
 
+    private void validateCloseReason(CloseReason.CloseCode closeCode) {
+    }
+
     @BeforeEach
     void setUp() {
         scenario
@@ -53,20 +56,35 @@ class ScenarioImplTest {
                 .expectIoError(Throwable::getCause, TEST_DURATION)
                 .wait(TEST_DURATION)
                 .closeConnection(CloseReason.CloseCodes.PROTOCOL_ERROR, TEST_DURATION)
-                .expectConnectionClosed(TEST_DURATION);
+                .expectConnectionClosed(this::validateCloseReason, TEST_DURATION);
     }
 
     @Test
-    void testSequencing() {
+    void testPlaying() {
         assertFalse(scenario.isDone());
 
         AtomicInteger idx = new AtomicInteger();
         scenario.play((act) -> {
-            assertEquals(ACT_TYPES[idx.get()], act.eventType());
+            int i = idx.getAndIncrement();
+            assertEquals(ACT_TYPES[i], act.eventType());
             assertEquals(TEST_DURATION, act.delay());
-            idx.getAndIncrement();
         });
 
         assertTrue(scenario.isDone());
+    }
+
+    @Test
+    void testRequestStop() {
+        assertFalse(scenario.isDone());
+
+        AtomicInteger idx = new AtomicInteger();
+        scenario.play((act) -> {
+            int i = idx.getAndIncrement();
+            if (i == 5) {
+                scenario.requestStop();
+            }
+        });
+
+        assertFalse(scenario.isDone());
     }
 }

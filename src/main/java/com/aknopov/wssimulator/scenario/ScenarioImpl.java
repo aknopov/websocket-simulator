@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
@@ -19,6 +20,7 @@ import jakarta.websocket.CloseReason.CloseCode;
 public class ScenarioImpl implements Scenario {
     private final Deque<Act<?>> acts;
     private final WebSocketSimulator simulator;
+    private final CountDownLatch stopRequested = new CountDownLatch(1);
 
     public ScenarioImpl(WebSocketSimulator simulator) {
         this.simulator = simulator;
@@ -56,8 +58,8 @@ public class ScenarioImpl implements Scenario {
     }
 
     @Override
-    public Scenario expectConnectionClosed(Duration waitPeriod) {
-        acts.add(new Act<>(waitPeriod, EventType.CLIENT_CLOSE, Act.VOID_ACT));
+    public Scenario expectConnectionClosed(Consumer<CloseCode> validator, Duration waitPeriod) {
+        acts.add(new Act<>(waitPeriod, EventType.CLIENT_CLOSE, validator));
         return this;
     }
 
@@ -69,7 +71,7 @@ public class ScenarioImpl implements Scenario {
 
     @Override
     public Scenario expectIoError(Consumer<Throwable> validator, Duration waitPeriod) {
-        acts.add(new Act<>(waitPeriod, EventType.IO_ERROR, Act.VOID_ACT));
+        acts.add(new Act<>(waitPeriod, EventType.IO_ERROR, validator));
         return this;
     }
 
@@ -92,10 +94,15 @@ public class ScenarioImpl implements Scenario {
 
     @Override
     public void play(Consumer<Act<?>> actProcessor) {
-        while (!acts.isEmpty()) {
+        while (stopRequested.getCount() > 0 && !acts.isEmpty()) {
             Act<?> next = acts.pop();
             actProcessor.accept(next);
         }
+    }
+
+    @Override
+    public void requestStop() {
+        stopRequested.countDown();
     }
 
     @Override

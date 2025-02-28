@@ -6,10 +6,12 @@ import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 import com.aknopov.wssimulator.ResettableLock;
+import com.aknopov.wssimulator.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ResettableLockTest {
@@ -64,11 +66,11 @@ class ResettableLockTest {
     }
 
     @Test
-    void testWaitInterval() throws Exception {
+    void testWaitInterval() {
         ResettableLock<Boolean> rl = new ResettableLock<>();
         Instant start = Instant.now();
 
-        assertNull(rl.await(Duration.ofMillis(WAIT_TIME_MSEC)));
+        assertThrows(TimeoutException.class, () -> rl.await(Duration.ofMillis(WAIT_TIME_MSEC)));
 
         Duration timeout = Duration.between(start, Instant.now());
         assertTrue(timeout.toMillis() < MAX_WAIT_MSEC);

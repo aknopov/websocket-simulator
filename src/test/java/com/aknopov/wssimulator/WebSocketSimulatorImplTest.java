@@ -8,16 +8,21 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
 import com.aknopov.wssimulator.scenario.Scenario;
 import com.aknopov.wssimulator.scenario.ValidationException;
+import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
+import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.tyrus.WebSocketClient;
+import jakarta.websocket.CloseReason.CloseCodes;
+import jakarta.websocket.CloseReason.CloseCode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -26,7 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 class WebSocketSimulatorImplTest {
-    private static final long MAXIMUM_TEST_WAIT_TIME_MS = 3_000L;
+    private static final long MAXIMUM_TEST_WAIT_TIME_MS = 10_000L;
     private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
 
     private static final String A_PATH = "/path";
@@ -36,12 +41,13 @@ class WebSocketSimulatorImplTest {
     private static final String TEXT_MESSAGE = "Hello!";
     private static final ByteBuffer BINARY_MESSAGE =
             ByteBuffer.wrap("Binary message".getBytes(StandardCharsets.UTF_8));
+    private static final String SERVER_RESPONSE = "All is good";
 
     private static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
     private static final int UNAUTHORIZED_CODE = 401;
 
     private SimulatorEndpoint mockEndpoint = mock(SimulatorEndpoint.class);
-    private WebSocketSimulatorImpl simulator;
+    private WebSocketSimulator simulator;
 
     @AfterEach
     void tearDown() {
@@ -96,7 +102,7 @@ class WebSocketSimulatorImplTest {
         simulator = new WebSocketSimulatorImpl(0, config);
         simulator.setEndpoint(mockEndpoint);
 
-        simulator.sendTextMessage(TEXT_MESSAGE);
+        simulator.sendMessage(new TextWebSocketMessage(TEXT_MESSAGE));
 
         verify(mockEndpoint).sendTextMessage(TEXT_MESSAGE);
         List<Event> events = simulator.getHistory().getEvents();
@@ -112,7 +118,7 @@ class WebSocketSimulatorImplTest {
         simulator = new WebSocketSimulatorImpl(0, config);
         simulator.setEndpoint(mockEndpoint);
 
-        simulator.sendBinaryMessage(BINARY_MESSAGE);
+        simulator.sendMessage(new BinaryWebSocketMessage(BINARY_MESSAGE));
 
         verify(mockEndpoint).sendBinaryMessage(BINARY_MESSAGE);
         List<Event> events = simulator.getHistory().getEvents();
@@ -123,8 +129,7 @@ class WebSocketSimulatorImplTest {
     }
 
     @Test
-    @Disabled("Just to demo API")
-    void testSimulatingSimulator() throws Exception {
+    void testRunningSimulator() throws Exception {
         CountDownLatch allIsDone = new CountDownLatch(1);
 
         simulator = new WebSocketSimulatorImpl(0, config);
@@ -132,20 +137,33 @@ class WebSocketSimulatorImplTest {
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, Duration.ofSeconds(1))
-                .sendMessage("All is good", ACTION_WAIT)
-                .expectConnectionClosed(ACTION_WAIT)
+                .sendMessage(SERVER_RESPONSE, ACTION_WAIT)
+                .expectConnectionClosed(this::validateCloseCode, ACTION_WAIT)
                 .perform(allIsDone::countDown, Duration.ZERO);
-
         simulator.start();
+
+        WebSocketClient wsClient = new WebSocketClient("ws://localhost:" + simulator.getServerPort() + A_PATH);
+        wsClient.start();
+        wsClient.sendTextMessage(TEXT_MESSAGE);
+        wsClient.stop();
+        Thread.sleep(200);
 
         assertTrue(allIsDone.await(MAXIMUM_TEST_WAIT_TIME_MS, TimeUnit.MILLISECONDS));
 
         simulator.stop();
 
+        assertFalse(simulator.hasErrors());
+    }
+
+    private void validateUpgrade(ProtocolUpgrade protocolUpgrade) {
+        int status = protocolUpgrade.status();
+        if (status != ProtocolUpgrade.SWITCH_SUCCESS_CODE) {
+            throw new ValidationException("Protocol wasn't upgraded - status code = " + status);
+        }
     }
 
     // Assuming authentication is done in handshake handler...
-    private void validateUpgrade(ProtocolUpgrade protocolUpgrade) {
+    private void validateUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
         int status = protocolUpgrade.status();
         boolean hasAuthHeader = protocolUpgrade.headers().containsKey("Authorization");
 
@@ -160,6 +178,12 @@ class WebSocketSimulatorImplTest {
     private void validateTextMessage(WebSocketMessage message) throws ValidationException {
         if (message.getMessageType() != WebSocketMessage.MessageType.TEXT) {
             throw new ValidationException("Expected text message");
+        }
+    }
+
+    private void validateCloseCode(CloseCode closeCode) {
+        if (closeCode != CloseCodes.NORMAL_CLOSURE) {
+            throw new ValidationException("Expected socket to be closed with code " + CloseCodes.NORMAL_CLOSURE.getCode());
         }
     }
 }

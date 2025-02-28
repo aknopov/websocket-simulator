@@ -9,7 +9,7 @@ import org.mockito.InOrder;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SimulatorEndpoint;
-import jakarta.websocket.CloseReason;
+import jakarta.websocket.CloseReason.CloseCode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -42,7 +42,7 @@ public class ClientServerTest extends BaseTest {
         inOrder.verify(mockListener, times(2)).onOpen(any(SimulatorEndpoint.class), anyMap());
         inOrder.verify(mockListener).onTextMessage(TEXT_MESSAGE);
         inOrder.verify(mockListener).onBinaryMessage(BINARY_MESSAGE);
-        inOrder.verify(mockListener, atLeastOnce()).onClose(any(CloseReason.class));
+        inOrder.verify(mockListener, atLeastOnce()).onClose(any(CloseCode.class));
 
         assertEquals(ProtocolUpgrade.SWITCH_SUCCESS_CODE, handshakeCaptor.getValue().status());
         server.stop();

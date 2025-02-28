@@ -17,7 +17,7 @@ import com.aknopov.wssimulator.SimulatorEndpoint;
 import com.aknopov.wssimulator.tyrus.WebSocketClient;
 import com.aknopov.wssimulator.tyrus.WebSocketServer;
 import com.aknopov.wssimulator.injection.ServiceLocator;
-import jakarta.websocket.CloseReason;
+import jakarta.websocket.CloseReason.CloseCode;
 
 public final class Main {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketServer.class);
@@ -70,8 +70,8 @@ public final class Main {
         }
 
         @Override
-        public void onClose(CloseReason closeReason) {
-            logger.info("Connection closed. Reason - {}", closeReason);
+        public void onClose(CloseCode closeCode) {
+            logger.info("Connection closed. Code - {}", closeCode);
         }
 
         @Override

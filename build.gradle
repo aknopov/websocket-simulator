@@ -24,7 +24,7 @@ dependencies {
     runtimeOnly "org.glassfish.tyrus:tyrus-container-grizzly-server:$jakartaVersion"
 
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
-    runtimeOnly "ch.qos.logback:logback-classic:$logbackVersion"
+    testRuntimeOnly "ch.qos.logback:logback-classic:$logbackVersion"
 
     compileOnly "com.google.code.findbugs:jsr305:$jsr305Version"
     compileOnly "com.google.errorprone:error_prone_annotations:$errorproneVersion"

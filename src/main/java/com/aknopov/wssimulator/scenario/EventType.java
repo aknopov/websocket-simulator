@@ -14,7 +14,6 @@ public enum EventType {
     CLIENT_MESSAGE,
     WAIT,
     ACTION,
-    RESTART,
     ERROR,
     IO_ERROR
 }

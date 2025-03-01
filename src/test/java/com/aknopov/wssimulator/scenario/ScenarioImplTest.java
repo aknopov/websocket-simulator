@@ -31,6 +31,8 @@ class ScenarioImplTest {
             EventType.SERVER_CLOSE,
             EventType.CLIENT_CLOSE
     };
+    private static final int ACT_DURATION_MSEC = 50;
+    private static final Duration WAIT_DURATION = Duration.ofMillis((ACT_TYPES.length + 2) * ACT_DURATION_MSEC);
 
     private final WebSocketSimulator mockSimulator = mock(WebSocketSimulator.class);
     private final Scenario scenario = new ScenarioImpl(mockSimulator);
@@ -78,13 +80,34 @@ class ScenarioImplTest {
         assertFalse(scenario.isDone());
 
         AtomicInteger idx = new AtomicInteger();
-        scenario.play((act) -> {
+        scenario.play(act -> {
             int i = idx.getAndIncrement();
-            if (i == 5) {
+            if (i == ACT_TYPES.length / 2) {
                 scenario.requestStop();
             }
         });
 
         assertFalse(scenario.isDone());
+    }
+
+    @Test
+    void testWaitingForCompletion() {
+        new Thread(() -> {
+            scenario.play(act -> {
+                sleepUninterrupted(ACT_DURATION_MSEC);
+            });
+        }).start();
+
+        assertFalse(scenario.isDone());
+        scenario.awaitCompletion(WAIT_DURATION);
+        assertTrue(scenario.isDone());
+    }
+
+    private void sleepUninterrupted(long millis) {
+        try {
+            Thread.sleep(millis);
+        }
+        catch (InterruptedException e) {
+        }
     }
 }

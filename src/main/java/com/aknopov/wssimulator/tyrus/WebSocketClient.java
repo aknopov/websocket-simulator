@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.util.Objects;
 
 import javax.annotation.Nullable;
 
@@ -12,6 +11,7 @@ import org.glassfish.tyrus.client.ClientManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.aknopov.wssimulator.Utils;
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.CloseReason.CloseCodes;
 import jakarta.websocket.DeploymentException;
@@ -64,7 +64,7 @@ public class WebSocketClient {
      */
     public void stop() {
         assumeConnected();
-        Objects.requireNonNull(endpoint)
+        Utils.requireNonNull(endpoint)
                 .closeConnection(CloseCodes.NORMAL_CLOSURE);
         endpoint = null;
     }
@@ -78,7 +78,7 @@ public class WebSocketClient {
      */
     public void sendTextMessage(String message) {
         assumeConnected();
-        Objects.requireNonNull(endpoint)
+        Utils.requireNonNull(endpoint)
                 .sendTextMessage(message);
     }
 
@@ -91,7 +91,7 @@ public class WebSocketClient {
      */
     public void sendBinaryMessage(ByteBuffer message) {
         assumeConnected();
-        Objects.requireNonNull(endpoint)
+        Utils.requireNonNull(endpoint)
                 .sendBinaryMessage(message);
     }
 

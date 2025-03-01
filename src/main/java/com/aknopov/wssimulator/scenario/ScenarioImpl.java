@@ -5,9 +5,11 @@ import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.TimeoutException;
 import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
 import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
@@ -21,6 +23,7 @@ public class ScenarioImpl implements Scenario {
     private final Deque<Act<?>> acts;
     private final WebSocketSimulator simulator;
     private final CountDownLatch stopRequested = new CountDownLatch(1);
+    private final CountDownLatch allIsDone = new CountDownLatch(1);
 
     public ScenarioImpl(WebSocketSimulator simulator) {
         this.simulator = simulator;
@@ -75,11 +78,6 @@ public class ScenarioImpl implements Scenario {
         return this;
     }
 
-//TODO    @Override
-//    public Scenario restartServer(Duration waitPeriod) {
-//        return this;
-//    }
-
     @Override
     public Scenario perform(Runnable runnable, Duration initialDelay) {
         acts.add(new Act<>(initialDelay, EventType.ACTION, x -> runnable.run()));
@@ -98,6 +96,7 @@ public class ScenarioImpl implements Scenario {
             Act<?> next = acts.pop();
             actProcessor.accept(next);
         }
+        allIsDone.countDown();
     }
 
     @Override
@@ -108,5 +107,15 @@ public class ScenarioImpl implements Scenario {
     @Override
     public boolean isDone() {
         return acts.isEmpty();
+    }
+
+    @Override
+    public boolean awaitCompletion(Duration duration) {
+        try {
+            return allIsDone.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e) {
+            throw new TimeoutException("Wait for scenario completion interrupted");
+        }
     }
 }

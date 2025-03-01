@@ -16,13 +16,6 @@ public interface WebSocketSimulator {
     Scenario getScenario();
 
     /**
-     * Sets simulator scenario
-     *
-     * @param scenario new scenario
-     */
-    void setScenario(Scenario scenario);
-
-    /**
      * Sets the only simulator endpoint to be able to act on server side
      *
      * @param endpoint the endpoint
@@ -37,16 +30,11 @@ public interface WebSocketSimulator {
     History getHistory();
 
     /**
-     * Resets simulator history
-     */
-    void resetHistory();
-
-    /**
-     * Gets actual server port
+     * Gets actual port of the communication
      *
      * @return the server port
      */
-    int getServerPort();
+    int getPort();
 
     /**
      * Starts simulator and underlying WebSocket server
@@ -72,11 +60,5 @@ public interface WebSocketSimulator {
      */
     boolean hasErrors();
 
-//    /**
-//     * Restarts simulator and underlying WebSocket server on the same port
-//     *
-//     * @param coolDownPeriodMs waiting period before the new start
-//     */
-//TODO Needs `WebSocketServer::start(int port)`
-//     void restart(Duration coolDownPeriodMs);
+
 }

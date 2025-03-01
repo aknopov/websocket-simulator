@@ -13,21 +13,19 @@ import org.junit.jupiter.api.Test;
 
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
-import com.aknopov.wssimulator.scenario.Scenario;
 import com.aknopov.wssimulator.scenario.ValidationException;
 import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
 import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
 import com.aknopov.wssimulator.tyrus.WebSocketClient;
 import com.aknopov.wssimulator.tyrus.WebSocketServer;
-import jakarta.websocket.CloseReason.CloseCodes;
 import jakarta.websocket.CloseReason.CloseCode;
+import jakarta.websocket.CloseReason.CloseCodes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -37,7 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class WebSocketSimulatorImplTest {
-    private static final long MAXIMUM_TEST_WAIT_TIME_MS = 10_000L;
+    private static final Duration MAXIMUM_TEST_WAIT_TIME = Duration.ofMillis(10_000L);
     private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
 
     private static final String A_PATH = "/path";
@@ -66,13 +64,13 @@ class WebSocketSimulatorImplTest {
     @Test
     void testPredefinedPort() {
         simulator = new WebSocketSimulatorImpl(config, PORT);
-        assertEquals(PORT, simulator.getServerPort());
+        assertEquals(PORT, simulator.getPort());
     }
 
     @Test
     void testDynamicPort() {
         simulator = new WebSocketSimulatorImpl(config, 0);
-        assertNotEquals(0, simulator.getServerPort());
+        assertNotEquals(0, simulator.getPort());
     }
 
     @Test
@@ -97,21 +95,12 @@ class WebSocketSimulatorImplTest {
                 .eventType());
         assertEquals(EventType.STOPPED, events.get(1)
                 .eventType());
-
-        simulator.resetHistory();
-        assertEquals(0, simulator.getHistory()
-                .getEvents()
-                .size());
     }
 
     @Test
-    void testScenarioGetSet() {
+    void testGetScenario() {
         simulator = new WebSocketSimulatorImpl(config, 0);
         assertNotNull(simulator.getScenario());
-
-        Scenario mockScenario = mock(Scenario.class);
-        simulator.setScenario(mockScenario);
-        assertSame(mockScenario, simulator.getScenario());
     }
 
     @Test
@@ -169,7 +158,6 @@ class WebSocketSimulatorImplTest {
 
     @Test
     void testRunningSimulator() throws Exception {
-        CountDownLatch allIsDone = new CountDownLatch(1); //UC
 
         simulator = new WebSocketSimulatorImpl(config, 0);
         simulator.getScenario()
@@ -178,15 +166,15 @@ class WebSocketSimulatorImplTest {
                 .expectMessage(this::validateTextMessage, Duration.ofSeconds(1))
                 .sendMessage(SERVER_RESPONSE, ACTION_WAIT)
                 .expectConnectionClosed(this::validateCloseCode, ACTION_WAIT)
-                .perform(allIsDone::countDown, Duration.ZERO);
+                .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
         simulator.start();
 
-        WebSocketClient wsClient = new WebSocketClient("ws://localhost:" + simulator.getServerPort() + A_PATH);
+        WebSocketClient wsClient = new WebSocketClient("ws://localhost:" + simulator.getPort() + A_PATH);
         wsClient.start();
         wsClient.sendTextMessage(TEXT_MESSAGE);
         wsClient.stop();
 
-        assertTrue(allIsDone.await(MAXIMUM_TEST_WAIT_TIME_MS, TimeUnit.MILLISECONDS)); // UC simulator.awaitCompletion(Duration waitTime)
+        assertTrue(simulator.getScenario().awaitCompletion(MAXIMUM_TEST_WAIT_TIME));
 
         simulator.stop();
 

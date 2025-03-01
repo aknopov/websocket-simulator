@@ -6,6 +6,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SimulatorEndpoint;
@@ -22,11 +24,17 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class ClientServerTest extends BaseTest {
+    private static final Logger logger = LoggerFactory.getLogger(ClientServerTest.class);
+
     @Test
     void TestCommunication() throws Exception {
         WebSocketServer server = new WebSocketServer("localhost", "/", Map.of());
         server.start();
         server.waitForStart(Duration.ofSeconds(1));
+
+        logger.info("-------------------------------");
+        logger.info("Server is running on port {}", server.getPort());
+        logger.info("-------------------------------");
 
         WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()));
         client.start();

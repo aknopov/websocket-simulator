@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.util.function.Consumer;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.TimeoutException;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
 import jakarta.websocket.CloseReason.CloseCode;
 
@@ -82,17 +83,7 @@ public interface Scenario {
      * @param waitPeriod wait period to receive the error
      * @return this instance
      */
-    Scenario expectIoError(Consumer<Throwable> validator, Duration waitPeriod);
-
-//TODO Needs `WebSocketServer` refactoring
-//    /**
-//     * Adds an act to scenario queue to restart the server
-//     *
-//     * @param waitPeriod delay before closing connection
-//     *
-//     * @return this instance
-//     */
-//    Scenario restartServer(Duration waitPeriod);
+    Scenario expectIoError(Consumer<Throwable> validator, Duration waitPeriod); //UC dubious - create test
 
     /**
      * Adds an act to scenario queue to perform arbitrary functionality.
@@ -129,4 +120,13 @@ public interface Scenario {
      * @return check result
      */
     boolean isDone();
+
+    /**
+     * Waits for scenario to be completed
+     *
+     * @param duration wait duration
+     * @return {@code true} if scenario completed before wait expiry
+     * @throws TimeoutException if wait was interrupted
+     */
+    boolean awaitCompletion(Duration duration);
 }

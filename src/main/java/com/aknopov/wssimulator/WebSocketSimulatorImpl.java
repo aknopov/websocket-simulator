@@ -86,22 +86,12 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     }
 
     @Override
-    public void setScenario(Scenario scenario) {
-        this.scenario = scenario;
-    }
-
-    @Override
     public History getHistory() {
         return history;
     }
 
     @Override
-    public void resetHistory() {
-        history.reset();
-    }
-
-    @Override
-    public int getServerPort() {
+    public int getPort() {
         return wsServer.getPort();
     }
 

@@ -46,15 +46,19 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     /**
      * Creates simulator with given configuration
      *
-     * @param port port number, 0 - is for dynamic
      * @param config session configuration
+     * @param port port number, 0 - is for dynamic
      */
-    public WebSocketSimulatorImpl(int port, SessionConfig config) {
-
-        ServiceLocator.init(config, this);
-        this.wsServer = port != 0
+    public WebSocketSimulatorImpl(SessionConfig config, int port) {
+        this(config, port != 0
                 ? new WebSocketServer("localhost", "/", Map.of(), port)
-                : new WebSocketServer("localhost", "/", Map.of());
+                : new WebSocketServer("localhost", "/", Map.of()));
+    }
+
+    //VisibleForTesting
+    WebSocketSimulatorImpl(SessionConfig config, WebSocketServer wsServer) {
+        this.wsServer = wsServer;
+        ServiceLocator.init(config, this);
         startServer(config);
     }
 
@@ -62,7 +66,9 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     private void startServer(SessionConfig config) {
         try {
             wsServer.start();
-            wsServer.waitForStart(config.idleTimeout());
+            if (!wsServer.waitForStart(config.idleTimeout())) {
+                throw new TimeoutException("Wait for server start timed out");
+            }
             history.addEvent(Event.create(EventType.STARTED));
         }
         catch (RuntimeException e) {
@@ -122,6 +128,11 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
             case TEXT -> sendTextMessage(Utils.requireNonNull(message.getMessageText()));
             case BINARY -> sendBinaryMessage(Utils.requireNonNull(message.getMessageBytes()));
         }
+    }
+
+    @Override
+    public boolean hasErrors() {
+        return history.getEvents().stream().anyMatch(e -> e.eventType() == EventType.ERROR);
     }
 
     private void sendTextMessage(String message) {
@@ -288,10 +299,5 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     @Override
     public void onBinaryMessage(ByteBuffer message) {
         releaseEvent(EventType.CLIENT_MESSAGE, new BinaryWebSocketMessage(message));
-    }
-
-    @Override
-    public boolean hasErrors() {
-        return history.getEvents().stream().anyMatch(e -> e.eventType() == EventType.ERROR);
     }
 }

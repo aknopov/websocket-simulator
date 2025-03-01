@@ -21,6 +21,7 @@ import jakarta.websocket.DeploymentException;
  */
 public class WebSocketClient {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketClient.class);
+    private static final String NOT_OPENED_MESSAGE = "Websocket client is closed or not ready";
 
     private final URI url;
     private final ClientEndpointConfig cec;
@@ -63,8 +64,7 @@ public class WebSocketClient {
      * Stops web socket client and closes connection.
      */
     public void stop() {
-        assumeConnected();
-        Utils.requireNonNull(endpoint)
+        Utils.requireNonNull(endpoint, NOT_OPENED_MESSAGE)
                 .closeConnection(CloseCodes.NORMAL_CLOSURE);
         endpoint = null;
     }
@@ -77,8 +77,7 @@ public class WebSocketClient {
      * @throws IllegalStateException if connection is not opened
      */
     public void sendTextMessage(String message) {
-        assumeConnected();
-        Utils.requireNonNull(endpoint)
+        Utils.requireNonNull(endpoint, NOT_OPENED_MESSAGE)
                 .sendTextMessage(message);
     }
 
@@ -90,15 +89,7 @@ public class WebSocketClient {
      * @throws IllegalStateException if connection is not opened
      */
     public void sendBinaryMessage(ByteBuffer message) {
-        assumeConnected();
-        Utils.requireNonNull(endpoint)
+        Utils.requireNonNull(endpoint, NOT_OPENED_MESSAGE)
                 .sendBinaryMessage(message);
-    }
-
-    // Don't want to throw NPE from `Objects.requireNonNull`
-    private void assumeConnected() {
-        if (endpoint == null) {
-            throw new IllegalStateException("Websocket client is closed or not ready");
-        }
     }
 }

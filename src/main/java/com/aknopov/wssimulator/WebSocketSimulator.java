@@ -1,5 +1,8 @@
 package com.aknopov.wssimulator;
 
+import java.util.List;
+
+import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.History;
 import com.aknopov.wssimulator.scenario.Scenario;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
@@ -60,5 +63,10 @@ public interface WebSocketSimulator {
      */
     boolean hasErrors();
 
-
+    /**
+     * Gets list of recorded scenario errors
+     *
+     * @return the list
+     */
+    List<Event> getErrors();
 }

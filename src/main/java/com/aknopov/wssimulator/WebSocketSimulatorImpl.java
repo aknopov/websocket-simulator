@@ -4,6 +4,7 @@ import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -38,8 +39,8 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
 
     private final WebSocketServer wsServer;
     private final Thread scenarioThread = new Thread(this::playScenario, "SimulatorThread");
+    private final Scenario scenario = new ScenarioImpl(this);
 
-    private Scenario scenario = new ScenarioImpl(this);
     @Nullable
     private SimulatorEndpoint endpoint;
 
@@ -123,6 +124,14 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     @Override
     public boolean hasErrors() {
         return history.getEvents().stream().anyMatch(e -> e.eventType() == EventType.ERROR);
+    }
+
+    @Override
+    public List<Event> getErrors() {
+        return history.getEvents()
+                .stream()
+                .filter(e -> e.eventType() == EventType.ERROR)
+                .toList();
     }
 
     private void sendTextMessage(String message) {

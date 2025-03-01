@@ -19,11 +19,10 @@ import jakarta.websocket.DeploymentException;
 public class WebSocketServer {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketServer.class);
 
-    private final Server server;
     private final int port;
-
-    private CountDownLatch stopLatch;
-    private CountDownLatch startLatch;
+    private final Server server;
+    private final CountDownLatch stopLatch;
+    private final CountDownLatch startLatch;
 
     /**
      * Creates server instant.
@@ -36,7 +35,8 @@ public class WebSocketServer {
     public WebSocketServer(String host, String contextPath, Map<String, Object> properties, int port) {
         this.port = port;
         this.server = new Server(host, port, contextPath, properties, WebSocketEndpoint.getConfigClass());
-        init();
+        this.stopLatch = new CountDownLatch(1);
+        this.startLatch = new CountDownLatch(1);
     }
 
     /**
@@ -50,12 +50,6 @@ public class WebSocketServer {
         this(host, contextPath, properties, getAvailablePort());
     }
 
-    private void init() {
-        this.stopLatch = new CountDownLatch(1);
-        this.startLatch = new CountDownLatch(1);
-
-    }
-
     /**
      * Starts WebSocket server asynchronously
      *
@@ -65,16 +59,18 @@ public class WebSocketServer {
         if (startLatch.getCount() == 0) {
             throw new IllegalStateException("Server is neither in initial state nor stopped");
         }
-        logger.debug("Starting WS server");
+        logger.debug("Starting WS server on port {}", port);
         new Thread(this::runServer).start();
     }
 
     /**
      * Stops the server and closes connection.
      */
-    public void stop() {
-        logger.debug("Stopping WS server");
-        stopLatch.countDown();
+    public synchronized void stop() {
+        if (stopLatch.getCount() == 1) {
+            logger.debug("Stopping WS server on port {}", port);
+            stopLatch.countDown();
+        }
     }
 
     /**
@@ -108,7 +104,6 @@ public class WebSocketServer {
 
             stopLatch.await();
             logger.debug("WS server stopped");
-            init();
         }
         catch (DeploymentException e) {
             logger.error("Can't start server on port {}", server.getPort(), e);

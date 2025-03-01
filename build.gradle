@@ -36,6 +36,7 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    // testLogging.showStandardStreams = true
 }
 
 project.checkstyle.configDirectory.set(file('./checkstyle'))

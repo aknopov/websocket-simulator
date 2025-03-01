@@ -13,6 +13,7 @@ import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SimulatorEndpoint;
 import jakarta.websocket.CloseReason.CloseCode;
 
+import static com.aknopov.wssimulator.Helpers.sleepUninterrupted;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,7 +43,7 @@ public class ClientServerTest extends BaseTest {
         client.sendBinaryMessage(BINARY_MESSAGE);
         client.stop();
 
-        Thread.sleep(200);
+        sleepUninterrupted(200);
 
         ArgumentCaptor<ProtocolUpgrade> handshakeCaptor = ArgumentCaptor.forClass(ProtocolUpgrade.class);
         InOrder inOrder = inOrder(mockListener);

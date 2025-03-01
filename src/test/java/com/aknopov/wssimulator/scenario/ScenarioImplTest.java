@@ -13,6 +13,7 @@ import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
 import jakarta.websocket.CloseReason;
 
+import static com.aknopov.wssimulator.Helpers.sleepUninterrupted;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
@@ -101,13 +102,5 @@ class ScenarioImplTest {
         assertFalse(scenario.isDone());
         scenario.awaitCompletion(WAIT_DURATION);
         assertTrue(scenario.isDone());
-    }
-
-    private void sleepUninterrupted(long millis) {
-        try {
-            Thread.sleep(millis);
-        }
-        catch (InterruptedException e) {
-        }
     }
 }

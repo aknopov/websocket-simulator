@@ -73,27 +73,31 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
 
     @Override
     public void onClose(Session session, CloseReason closeReason) {
+        logger.debug("Connection closed because of {}", closeReason.getCloseCode());
         eventListener.onClose(closeReason.getCloseCode());
         this.session = null;
     }
 
     @Override
     public void onError(Session session, Throwable error) {
+        logger.error("Communication error with exception '{}", error.getMessage());
         eventListener.onError(error);
     }
 
     private void onTextMessage(String message) {
+        logger.debug("Received text message '{}'", message);
         eventListener.onTextMessage(message);
     }
 
     private void onBinaryMessage(ByteBuffer message) {
+        logger.debug("Received binary message with {} bytes", message.remaining());
         eventListener.onBinaryMessage(message);
     }
 
     @Override
     public void sendTextMessage(String message) {
         if (session != null && session.isOpen()) {
-            logger.debug("Sending text message");
+            logger.debug("Sending text message '{}'", message);
             try {
                 session.getBasicRemote().sendText(message);
             }
@@ -106,7 +110,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     @Override
     public void sendBinaryMessage(ByteBuffer message) {
         if (session != null && session.isOpen()) {
-            logger.debug("Sending binary message");
+            logger.debug("Sending binary message of {} bytes", message.remaining());
             try {
                 session.getBasicRemote().sendBinary(message);
             }
@@ -120,6 +124,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     public void closeConnection(CloseCode closeCode) {
         try {
             if (session != null && session.isOpen()) {
+                logger.debug("Closing connection with code {}", closeCode);
                 session.close(new CloseReason(closeCode, ""));
             }
         }

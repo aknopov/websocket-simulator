@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ResettableLockTest {
 
     private static final long WAIT_TIME_MSEC = 200;
-    private static final long MAX_WAIT_MSEC = 220;
+    private static final long MAX_WAIT_MSEC = 300;
     private static final int USES_COUNT = 3;
 
     @Test

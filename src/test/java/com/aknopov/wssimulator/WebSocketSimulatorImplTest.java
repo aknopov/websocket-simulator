@@ -5,8 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -145,12 +143,7 @@ class WebSocketSimulatorImplTest {
         simulator.sendMessage(new TextWebSocketMessage(TEXT_MESSAGE));
         simulator.sendMessage(new BinaryWebSocketMessage(BINARY_MESSAGE));
 
-        List<Event> errors = simulator.getHistory()
-                .getEvents()
-                .stream()
-                .filter(e -> EventType.ERROR == e.eventType())
-                .toList();
-
+        List<Event> errors = simulator.getErrors();
         assertEquals(2, errors.size());
         assertEquals("Attempted to send text message before establishing connection", errors.get(0).description());
         assertEquals("Can't send binary: null", errors.get(1).description());
@@ -164,7 +157,7 @@ class WebSocketSimulatorImplTest {
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, Duration.ofSeconds(1))
-                .sendMessage(SERVER_RESPONSE, ACTION_WAIT)
+                .sendMessage(SERVER_RESPONSE, Duration.ZERO)
                 .expectConnectionClosed(this::validateCloseCode, ACTION_WAIT)
                 .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
         simulator.start();
@@ -175,7 +168,6 @@ class WebSocketSimulatorImplTest {
         wsClient.stop();
 
         assertTrue(simulator.getScenario().awaitCompletion(MAXIMUM_TEST_WAIT_TIME));
-
         simulator.stop();
 
         assertFalse(simulator.hasErrors());
@@ -211,5 +203,9 @@ class WebSocketSimulatorImplTest {
         if (closeCode != CloseCodes.NORMAL_CLOSURE) {
             throw new ValidationException("Expected socket to be closed with code " + CloseCodes.NORMAL_CLOSURE.getCode());
         }
+    }
+
+    private void validateIoError(Throwable throwable) {
+        System.err.println("-- Got error: " + throwable);
     }
 }

@@ -27,7 +27,7 @@ public class ResettableLock<T> {
         }
         T retVal = refPayload.get();
         if (retVal == null) {
-            throw new TimeoutException("Data wasn't released in " + waitDuration.toMillis() + " mses");
+            throw new TimeoutException("Data wasn't released in " + waitDuration.toMillis() + " msec");
         }
         return retVal;
     }

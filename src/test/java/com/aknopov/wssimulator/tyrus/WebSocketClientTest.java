@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -19,5 +20,12 @@ class WebSocketClientTest extends BaseTest {
     void testStart() throws Exception {
         WebSocketClient client = new WebSocketClient("ws://localhost:0/some/path");
         assertFalse(client.start());
+    }
+
+    @Test
+    void testGetPort() throws Exception {
+        WebSocketClient client = new WebSocketClient("ws://@example.com:123/");
+
+        assertEquals(123, client.getPort());
     }
 }

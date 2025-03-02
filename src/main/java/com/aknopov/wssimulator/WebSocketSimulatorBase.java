@@ -11,7 +11,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import com.aknopov.wssimulator.injection.ServiceLocator;
 import com.aknopov.wssimulator.scenario.Act;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
@@ -22,59 +21,35 @@ import com.aknopov.wssimulator.scenario.ValidationException;
 import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
 import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
-import com.aknopov.wssimulator.tyrus.WebSocketServer;
-import jakarta.websocket.CloseReason.CloseCode;
+import jakarta.websocket.CloseReason;
 
 /**
- * Implementation of WebSocketSimulator
+ * Common functionality of client and server simulators
  */
-public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener {
-    private final History history = new History();
+public abstract class WebSocketSimulatorBase implements WebSocketSimulator, EventListener {
+    protected final History history = new History();
+    protected final Scenario scenario = new ScenarioImpl(this);
+    protected final Thread scenarioThread;
+    @Nullable
+    protected SimulatorEndpoint endpoint;
     private final Map<EventType, ResettableLock<?>> eventLocks = Map.of(
             EventType.UPGRADE, new ResettableLock<ProtocolUpgrade>(),
             EventType.OPEN, new ResettableLock<SimulatorEndpoint>(),
-            EventType.CLIENT_CLOSE, new ResettableLock<CloseCode>(),
+            EventType.CLIENT_CLOSE, new ResettableLock<CloseReason.CloseCode>(),
             EventType.CLIENT_MESSAGE, new ResettableLock<WebSocketMessage>(),
             EventType.IO_ERROR, new ResettableLock<Throwable>());
 
-    private final WebSocketServer wsServer;
-    private final Thread scenarioThread = new Thread(this::playScenario, "SimulatorThread");
-    private final Scenario scenario = new ScenarioImpl(this);
-
-    @Nullable
-    private SimulatorEndpoint endpoint;
+    protected WebSocketSimulatorBase(String threadName) {
+        this.scenarioThread = new Thread(this::playScenario, threadName);
+    }
 
     /**
-     * Creates simulator with given configuration
+     * Gets thread in which scenario is played
      *
-     * @param config session configuration
-     * @param port port number, 0 - is for dynamic
+     * @return thread
      */
-    public WebSocketSimulatorImpl(SessionConfig config, int port) {
-        this(config, port != 0
-                ? new WebSocketServer("localhost", "/", Map.of(), port)
-                : new WebSocketServer("localhost", "/", Map.of()));
-    }
-
-    //VisibleForTesting
-    WebSocketSimulatorImpl(SessionConfig config, WebSocketServer wsServer) {
-        this.wsServer = wsServer;
-        ServiceLocator.init(config, this);
-        startServer(config);
-    }
-
-    @SuppressWarnings("NullAway")
-    private void startServer(SessionConfig config) {
-        try {
-            wsServer.start();
-            if (!wsServer.waitForStart(config.idleTimeout())) {
-                throw new TimeoutException("Wait for server start timed out");
-            }
-            history.addEvent(Event.create(EventType.STARTED));
-        }
-        catch (RuntimeException e) {
-            history.addEvent(Event.error(e.getMessage()));
-        }
+    public Thread getThread() {
+        return scenarioThread;
     }
 
     //
@@ -92,23 +67,6 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     }
 
     @Override
-    public int getPort() {
-        return wsServer.getPort();
-    }
-
-    @Override
-    public void start() {
-        scenarioThread.start();
-    }
-
-    @Override
-    public void stop() {
-        wsServer.stop();
-        scenario.requestStop();
-        history.addEvent(Event.create(EventType.STOPPED));
-    }
-
-    @Override
     public void setEndpoint(SimulatorEndpoint endpoint) {
         this.endpoint = endpoint;
     }
@@ -119,19 +77,6 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
             case TEXT -> sendTextMessage(Utils.requireNonNull(message.getMessageText()));
             case BINARY -> sendBinaryMessage(Utils.requireNonNull(message.getMessageBytes()));
         }
-    }
-
-    @Override
-    public boolean hasErrors() {
-        return history.getEvents().stream().anyMatch(e -> e.eventType() == EventType.ERROR);
-    }
-
-    @Override
-    public List<Event> getErrors() {
-        return history.getEvents()
-                .stream()
-                .filter(e -> e.eventType() == EventType.ERROR)
-                .toList();
     }
 
     private void sendTextMessage(String message) {
@@ -162,28 +107,44 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
         }
     }
 
+    @Override
+    public boolean hasErrors() {
+        return history.getEvents().stream().anyMatch(e -> e.eventType() == EventType.ERROR);
+    }
+
+    @Override
+    public List<Event> getErrors() {
+        return history.getEvents()
+                .stream()
+                .filter(e -> e.eventType() == EventType.ERROR)
+                .toList();
+    }
+
+    /**
+     * Process scenario acts
+     */
     private void playScenario() {
         scenario.play(act -> {
             switch (act.eventType()) {
                 case UPGRADE -> process(() -> {
                     ProtocolUpgrade protoUpgrade = waitFor(act, ProtocolUpgrade.class);
-                    consumeData(act.consumer(), protoUpgrade);
+                    consumeData(act, protoUpgrade);
                 });
                 case OPEN -> process(() -> {
                     SimulatorEndpoint endpoint = waitFor(act, SimulatorEndpoint.class);
-                    consumeData(act.consumer(), endpoint);
+                    consumeData(act, endpoint); // this triggers `setEndpoint(endpoint)`
                 });
                 case CLIENT_CLOSE -> {
-                    CloseCode code = waitFor(act, CloseCode.class);
-                    consumeData(act.consumer(), code);
+                    CloseReason.CloseCode code = waitFor(act, CloseReason.CloseCode.class);
+                    consumeData(act, code);
                 }
                 case CLIENT_MESSAGE -> process(() -> {
                     WebSocketMessage message = waitFor(act, WebSocketMessage.class);
-                    consumeData(act.consumer(), message);
+                    consumeData(act, message);
                 });
                 case IO_ERROR -> process(() -> {
                     Throwable error = waitFor(act, Throwable.class);
-                    consumeData(act.consumer(), error);
+                    consumeData(act, error);
                 });
                 case SERVER_MESSAGE -> process(() -> {
                     WebSocketMessage message = provideData(act, WebSocketMessage.class);
@@ -191,7 +152,7 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
                     history.addEvent(Event.create(EventType.SERVER_MESSAGE));
                 });
                 case SERVER_CLOSE -> process(() -> {
-                    CloseCode code = provideData(act, CloseCode.class);
+                    CloseReason.CloseCode code = provideData(act, CloseReason.CloseCode.class);
                     Utils.requireNonNull(endpoint).closeConnection(code);
                     history.addEvent(Event.create(EventType.SERVER_CLOSE));
                 });
@@ -202,15 +163,16 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
                 case ACTION -> process(() -> {
                     wait(act.delay());
                     history.addEvent(Event.create(EventType.ACTION));
-                    consumeData(act.consumer(), null);
+                    consumeData(act, null);
                 });
                 default ->
-                    history.addEvent(Event.error("Internal error, act " + act.eventType() + " is not processable"));
+                        history.addEvent(Event.error("Internal error, act " + act.eventType() + " is not processable"));
             }
         });
     }
 
-    private void process(Runnable runnable) {
+    // VisibleForTesting
+    void process(Runnable runnable) {
         try {
             runnable.run();
         }
@@ -233,6 +195,7 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
             Thread.sleep(waitDuration.toMillis());
         }
         catch (InterruptedException e) {
+            Thread.currentThread().interrupt();  // set interrupt flag
             throw new TimeoutException("Wait interrupted");
         }
     }
@@ -246,6 +209,7 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
             return ret;
         }
         catch (InterruptedException e) {
+            Thread.currentThread().interrupt();  // set interrupt flag
             throw new TimeoutException("Wait interrupted");
         }
     }
@@ -257,8 +221,8 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> void consumeData(@Nullable Consumer<?> consumer, @Nullable T data) {
-        Utils.requireNonNull((Consumer<T>)consumer).accept(data);
+    private static <T> void consumeData(Act<?> act, @Nullable T data) {
+        Utils.requireNonNull((Consumer<T>)act.consumer()).accept(data);
     }
 
     @SuppressWarnings("unchecked")
@@ -281,7 +245,7 @@ public class WebSocketSimulatorImpl implements WebSocketSimulator, EventListener
     }
 
     @Override
-    public void onClose(CloseCode closeCode) {
+    public void onClose(CloseReason.CloseCode closeCode) {
         releaseEvent(EventType.CLIENT_CLOSE, closeCode);
     }
 

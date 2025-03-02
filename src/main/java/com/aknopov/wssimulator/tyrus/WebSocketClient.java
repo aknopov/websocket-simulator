@@ -40,6 +40,14 @@ public class WebSocketClient {
     }
 
     /**
+     * Gets port to which client connects from the constructor URL
+     * @return the port
+     */
+    public int getPort() {
+        return  url.getPort();
+    }
+
+    /**
      * Starts WebSocket client synchronously
      *
      * @return {@code true} if client started

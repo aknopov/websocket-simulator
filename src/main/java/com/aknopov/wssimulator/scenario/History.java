@@ -11,13 +11,6 @@ public class History {
     private final List<Event> events = new ArrayList<>();
 
     /**
-     * Resets list of events
-     */
-    public void reset() {
-        events.clear();
-    }
-
-    /**
      * Provides immutable copy of history events
      *
      * @return list of events

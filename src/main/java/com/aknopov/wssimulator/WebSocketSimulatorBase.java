@@ -11,6 +11,9 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.aknopov.wssimulator.scenario.Act;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
@@ -27,6 +30,8 @@ import jakarta.websocket.CloseReason;
  * Common functionality of client and server simulators
  */
 public abstract class WebSocketSimulatorBase implements WebSocketSimulator, EventListener {
+    private static final Logger logger = LoggerFactory.getLogger(WebSocketSimulatorBase.class);
+
     protected final History history = new History();
     protected final Scenario scenario = new ScenarioImpl(this);
     protected final Thread scenarioThread;
@@ -35,8 +40,8 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     private final Map<EventType, ResettableLock<?>> eventLocks = Map.of(
             EventType.UPGRADE, new ResettableLock<ProtocolUpgrade>(),
             EventType.OPEN, new ResettableLock<SimulatorEndpoint>(),
-            EventType.CLIENT_CLOSE, new ResettableLock<CloseReason.CloseCode>(),
-            EventType.CLIENT_MESSAGE, new ResettableLock<WebSocketMessage>(),
+            EventType.CLOSED, new ResettableLock<CloseReason.CloseCode>(),
+            EventType.RECEIVE_MESSAGE, new ResettableLock<WebSocketMessage>(),
             EventType.IO_ERROR, new ResettableLock<Throwable>());
 
     protected WebSocketSimulatorBase(String threadName) {
@@ -69,6 +74,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     @Override
     public void setEndpoint(SimulatorEndpoint endpoint) {
         this.endpoint = endpoint;
+        logger.debug("Endpoint set");
     }
 
     @Override
@@ -80,10 +86,11 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendTextMessage(String message) {
+        logger.debug("Requested send text message");
         try {
             Utils.requireNonNull(endpoint)
                     .sendTextMessage(message);
-            history.addEvent(Event.create(EventType.SERVER_MESSAGE, "Text message"));
+            history.addEvent(Event.create(EventType.SEND_MESSAGE, "Text message"));
         }
         catch (IllegalStateException e) {
             history.addEvent(Event.error("Attempted to send text message before establishing connection"));
@@ -94,10 +101,11 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendBinaryMessage(ByteBuffer message) {
+        logger.debug("Requested send binary message");
         try {
             Utils.requireNonNull(endpoint)
                     .sendBinaryMessage(message);
-            history.addEvent(Event.create(EventType.SERVER_MESSAGE, "Binary message"));
+            history.addEvent(Event.create(EventType.SEND_MESSAGE, "Binary message"));
         }
         catch (IllegalStateException e) {
             history.addEvent(Event.error("Attempted to send binary message before establishing connection"));
@@ -134,11 +142,11 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                     SimulatorEndpoint endpoint = waitFor(act, SimulatorEndpoint.class);
                     consumeData(act, endpoint); // this triggers `setEndpoint(endpoint)`
                 });
-                case CLIENT_CLOSE -> {
+                case CLOSED -> {
                     CloseReason.CloseCode code = waitFor(act, CloseReason.CloseCode.class);
                     consumeData(act, code);
                 }
-                case CLIENT_MESSAGE -> process(() -> {
+                case RECEIVE_MESSAGE -> process(() -> {
                     WebSocketMessage message = waitFor(act, WebSocketMessage.class);
                     consumeData(act, message);
                 });
@@ -146,15 +154,15 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                     Throwable error = waitFor(act, Throwable.class);
                     consumeData(act, error);
                 });
-                case SERVER_MESSAGE -> process(() -> {
+                case SEND_MESSAGE -> process(() -> {
                     WebSocketMessage message = provideData(act, WebSocketMessage.class);
                     sendMessage(message);
-                    history.addEvent(Event.create(EventType.SERVER_MESSAGE));
+                    history.addEvent(Event.create(EventType.SEND_MESSAGE));
                 });
-                case SERVER_CLOSE -> process(() -> {
+                case DO_CLOSE -> process(() -> {
                     CloseReason.CloseCode code = provideData(act, CloseReason.CloseCode.class);
                     Utils.requireNonNull(endpoint).closeConnection(code);
-                    history.addEvent(Event.create(EventType.SERVER_CLOSE));
+                    history.addEvent(Event.create(EventType.DO_CLOSE));
                 });
                 case WAIT -> process(() -> {
                     wait(act.delay());
@@ -191,17 +199,18 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private static void wait(Duration waitDuration) {
+        logger.debug("Waiting for {} msec", waitDuration.toMillis());
         try {
             Thread.sleep(waitDuration.toMillis());
         }
         catch (InterruptedException e) {
-            Thread.currentThread().interrupt();  // set interrupt flag
             throw new TimeoutException("Wait interrupted");
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T waitFor(Act<?> act, Class<T> unused) {
+    private <T> T waitFor(Act<?> act, Class<T> klaz) {
+        logger.debug("Waiting {} for {} msec", klaz.getSimpleName(), act.delay().toMillis());
         ResettableLock<T> lock = (ResettableLock<T>)Utils.requireNonNull(eventLocks.get(act.eventType()));
         try {
             T ret = Utils.requireNonNull(lock.await(act.delay()));
@@ -209,13 +218,13 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             return ret;
         }
         catch (InterruptedException e) {
-            Thread.currentThread().interrupt();  // set interrupt flag
             throw new TimeoutException("Wait interrupted");
         }
     }
 
     @SuppressWarnings("unchecked")
     private <T> void releaseEvent(EventType eventType, T payload) {
+        logger.debug("Releasing {}", payload.getClass().getSimpleName());
         Utils.requireNonNull((ResettableLock<T>)eventLocks.get(eventType))
                 .release(payload);
     }
@@ -246,7 +255,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
 
     @Override
     public void onClose(CloseReason.CloseCode closeCode) {
-        releaseEvent(EventType.CLIENT_CLOSE, closeCode);
+        releaseEvent(EventType.CLOSED, closeCode);
     }
 
     @Override
@@ -256,11 +265,11 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
 
     @Override
     public void onTextMessage(String message) {
-        releaseEvent(EventType.CLIENT_MESSAGE, new TextWebSocketMessage(message));
+        releaseEvent(EventType.RECEIVE_MESSAGE, new TextWebSocketMessage(message));
     }
 
     @Override
     public void onBinaryMessage(ByteBuffer message) {
-        releaseEvent(EventType.CLIENT_MESSAGE, new BinaryWebSocketMessage(message));
+        releaseEvent(EventType.RECEIVE_MESSAGE, new BinaryWebSocketMessage(message));
     }
 }

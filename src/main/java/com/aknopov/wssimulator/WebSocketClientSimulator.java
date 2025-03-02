@@ -18,7 +18,6 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
             this.wsClient = new WebSocketClient(serverUrl);
         }
         catch (URISyntaxException e) {
-            history.addEvent(Event.error(e.getReason()));
             throw new IllegalArgumentException("Can't connect to '" + serverUrl + "'", e);
         }
     }

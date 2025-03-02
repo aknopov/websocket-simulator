@@ -44,31 +44,31 @@ public class ScenarioImpl implements Scenario {
 
     @Override
     public Scenario sendMessage(String message, Duration initialDelay) {
-        acts.add(new Act<>(initialDelay, EventType.SERVER_MESSAGE, () -> new TextWebSocketMessage(message)));
+        acts.add(new Act<>(initialDelay, EventType.SEND_MESSAGE, () -> new TextWebSocketMessage(message)));
         return this;
     }
 
     @Override
     public Scenario sendMessage(ByteBuffer message, Duration initialDelay) {
-        acts.add(new Act<>(initialDelay, EventType.SERVER_MESSAGE, () -> new BinaryWebSocketMessage(message)));
+        acts.add(new Act<>(initialDelay, EventType.SEND_MESSAGE, () -> new BinaryWebSocketMessage(message)));
         return this;
     }
 
     @Override
     public Scenario expectMessage(Consumer<WebSocketMessage> validator, Duration waitPeriod) {
-        acts.add(new Act<>(waitPeriod, EventType.CLIENT_MESSAGE, validator));
+        acts.add(new Act<>(waitPeriod, EventType.RECEIVE_MESSAGE, validator));
         return this;
     }
 
     @Override
     public Scenario expectConnectionClosed(Consumer<CloseCode> validator, Duration waitPeriod) {
-        acts.add(new Act<>(waitPeriod, EventType.CLIENT_CLOSE, validator));
+        acts.add(new Act<>(waitPeriod, EventType.CLOSED, validator));
         return this;
     }
 
     @Override
     public Scenario closeConnection(CloseCode closeCode, Duration initialDelay) {
-        acts.add(new Act<>(initialDelay, EventType.SERVER_CLOSE, () -> closeCode));
+        acts.add(new Act<>(initialDelay, EventType.DO_CLOSE, () -> closeCode));
         return this;
     }
 

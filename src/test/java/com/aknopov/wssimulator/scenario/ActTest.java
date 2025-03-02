@@ -21,10 +21,10 @@ class ActTest {
 
     @Test
     void testSupplierCreation() {
-        Act<String> act = new Act<>(Duration.ZERO, EventType.CLIENT_MESSAGE, () -> "Hello");
+        Act<String> act = new Act<>(Duration.ZERO, EventType.RECEIVE_MESSAGE, () -> "Hello");
 
         assertEquals(Duration.ZERO, act.delay());
-        assertEquals(EventType.CLIENT_MESSAGE, act.eventType());
+        assertEquals(EventType.RECEIVE_MESSAGE, act.eventType());
         assertNull(act.consumer());
         assertNotNull(act.supplier());
         assertEquals("Hello", act.supplier().get());

@@ -27,7 +27,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 class WebSocketSimulatorBaseTest {
-
     private static final String TEXT_MESSAGE = "Hello!";
     private static final ByteBuffer BINARY_MESSAGE =
             ByteBuffer.wrap("Binary message".getBytes(StandardCharsets.UTF_8));
@@ -73,7 +72,7 @@ class WebSocketSimulatorBaseTest {
         verify(mockEndpoint).sendTextMessage(TEXT_MESSAGE);
         List<Event> events = simulator.getHistory().getEvents();
         assertEquals(1, events.size());
-        assertEquals(EventType.SERVER_MESSAGE, events.get(0).eventType());
+        assertEquals(EventType.SEND_MESSAGE, events.get(0).eventType());
         assertEquals("Text message", events.get(0).description());
     }
 
@@ -87,7 +86,7 @@ class WebSocketSimulatorBaseTest {
         verify(mockEndpoint).sendBinaryMessage(BINARY_MESSAGE);
         List<Event> events = simulator.getHistory().getEvents();
         assertEquals(1, events.size());
-        assertEquals(EventType.SERVER_MESSAGE, events.get(0).eventType());
+        assertEquals(EventType.SEND_MESSAGE, events.get(0).eventType());
         assertEquals("Binary message", events.get(0).description());
     }
 
@@ -128,6 +127,7 @@ class WebSocketSimulatorBaseTest {
         simulator.getThread().interrupt();
 
         simulator.stop();
+        simulator.scenario.awaitCompletion(TEST_WAIT);
 
         List<Event> errors = simulator.getErrors();
         assertEquals(1, errors.size());
@@ -144,6 +144,7 @@ class WebSocketSimulatorBaseTest {
         simulator.getThread().interrupt();
 
         simulator.stop();
+        simulator.scenario.awaitCompletion(TEST_WAIT);
 
         List<Event> errors = simulator.getErrors();
         assertEquals(1, errors.size());

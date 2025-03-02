@@ -23,14 +23,14 @@ class ScenarioImplTest {
     private final static EventType[] ACT_TYPES = {
             EventType.UPGRADE,
             EventType.OPEN,
-            EventType.SERVER_MESSAGE,
-            EventType.CLIENT_MESSAGE,
+            EventType.SEND_MESSAGE,
+            EventType.RECEIVE_MESSAGE,
             EventType.ACTION,
-            EventType.SERVER_MESSAGE,
+            EventType.SEND_MESSAGE,
             EventType.IO_ERROR,
             EventType.WAIT,
-            EventType.SERVER_CLOSE,
-            EventType.CLIENT_CLOSE
+            EventType.DO_CLOSE,
+            EventType.CLOSED
     };
     private static final int ACT_DURATION_MSEC = 50;
     private static final Duration WAIT_DURATION = Duration.ofMillis((ACT_TYPES.length + 2) * ACT_DURATION_MSEC);

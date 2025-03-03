@@ -70,7 +70,7 @@ class WebSocketSimulatorBaseTest {
         simulator.sendMessage(new TextWebSocketMessage(TEXT_MESSAGE));
 
         verify(mockEndpoint).sendTextMessage(TEXT_MESSAGE);
-        List<Event> events = simulator.getHistory().getEvents();
+        List<Event> events = simulator.getHistory();
         assertEquals(1, events.size());
         assertEquals(EventType.SEND_MESSAGE, events.get(0).eventType());
         assertEquals("Text message", events.get(0).description());
@@ -84,7 +84,7 @@ class WebSocketSimulatorBaseTest {
         simulator.sendMessage(new BinaryWebSocketMessage(BINARY_MESSAGE));
 
         verify(mockEndpoint).sendBinaryMessage(BINARY_MESSAGE);
-        List<Event> events = simulator.getHistory().getEvents();
+        List<Event> events = simulator.getHistory();
         assertEquals(1, events.size());
         assertEquals(EventType.SEND_MESSAGE, events.get(0).eventType());
         assertEquals("Binary message", events.get(0).description());

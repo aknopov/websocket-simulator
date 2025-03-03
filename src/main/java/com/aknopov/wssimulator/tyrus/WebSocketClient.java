@@ -11,6 +11,7 @@ import org.glassfish.tyrus.client.ClientManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.Utils;
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.CloseReason.CloseCodes;
@@ -24,6 +25,7 @@ public class WebSocketClient {
     private static final String NOT_OPENED_MESSAGE = "Websocket client is closed or not ready";
 
     private final URI url;
+    private final EventListener eventListener;
     private final ClientEndpointConfig cec;
     @Nullable
     private WebSocketEndpoint endpoint;
@@ -32,9 +34,11 @@ public class WebSocketClient {
      * Creates WebSocket client with an endpoint
      *
      * @param url server URL (e.g. "ws://localhost:8888/some/path")
+     * @param eventListener event listener
      */
-    public WebSocketClient(String url) throws URISyntaxException {
+    public WebSocketClient(String url, EventListener eventListener) throws URISyntaxException {
         this.url = new URI(url);
+        this.eventListener = eventListener;
         this.cec = ClientEndpointConfig.Builder.create()
                 .build();
     }
@@ -56,7 +60,7 @@ public class WebSocketClient {
         logger.debug("Starting WS client");
 
         ClientManager client = ClientManager.createClient();
-        endpoint = new WebSocketEndpoint();
+        endpoint = new WebSocketEndpoint(eventListener);
         try {
             // We get session through WebSocketEndpoint
             client.connectToServer(endpoint, cec, url);

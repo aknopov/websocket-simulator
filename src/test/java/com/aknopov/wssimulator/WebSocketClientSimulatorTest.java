@@ -51,7 +51,7 @@ class WebSocketClientSimulatorTest {
             verify(wsClient).start();
             verify(wsClient).stop();
 
-            List<Event> events = simulator.getHistory().getEvents();
+            List<Event> events = simulator.getHistory();
             assertEquals(2, events.size());
             assertEquals(EventType.STARTED, events.get(0).eventType());
             assertEquals(EventType.STOPPED, events.get(1).eventType());

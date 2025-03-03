@@ -49,12 +49,23 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     }
 
     /**
-     * Creates the endpoint and injects event listener
+     * Creates the endpoint and injects event listener (server implementation)
      */
     public WebSocketEndpoint()
     {
-        eventListener = ServiceLocator.findOrCreate(EventListener.class);
-        sessionConfig = ServiceLocator.findOrCreate(SessionConfig.class);
+        this.eventListener = ServiceLocator.findOrCreate(EventListener.class);
+        this.sessionConfig = ServiceLocator.findOrCreate(SessionConfig.class);
+    }
+
+    /**
+     * Creates the endpoint with event listener (client implementation)
+     *
+     * @param eventListener event listener
+     */
+    public WebSocketEndpoint(EventListener eventListener)
+    {
+        this.eventListener = eventListener;
+        this.sessionConfig = ServiceLocator.findOrCreate(SessionConfig.class);
     }
 
     @Override

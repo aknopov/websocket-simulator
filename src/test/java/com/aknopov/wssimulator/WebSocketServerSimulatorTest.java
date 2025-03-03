@@ -76,7 +76,7 @@ class WebSocketServerSimulatorTest {
         doThrow(IllegalStateException.class).when(mockServer).start();
         simulator = new WebSocketServerSimulator(config, mockServer);
 
-        List<Event> events = simulator.getHistory().getEvents();
+        List<Event> events = simulator.getHistory();
         assertEquals(1, events.size());
         assertEquals(EventType.ERROR, events.get(0).eventType());
     }
@@ -86,8 +86,7 @@ class WebSocketServerSimulatorTest {
         simulator = new WebSocketServerSimulator(config, 0);
         simulator.stop();
 
-        var events = simulator.getHistory()
-                .getEvents();
+        var events = simulator.getHistory();
         assertEquals(2, events.size());
         assertEquals(EventType.STARTED, events.get(0)
                 .eventType());
@@ -95,7 +94,7 @@ class WebSocketServerSimulatorTest {
                 .eventType());
     }
 
-    @Test //UC to SimulatorIntegrationTest
+    @Test //UC to SimulatorsIntegrationTest
     void testRunningSimulator() throws Exception {
         simulator = new WebSocketServerSimulator(config, 0);
         simulator.getScenario()
@@ -108,7 +107,7 @@ class WebSocketServerSimulatorTest {
                 .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
         simulator.start();
 
-        WebSocketClient wsClient = new WebSocketClient("ws://localhost:" + simulator.getPort() + A_PATH);
+        WebSocketClient wsClient = new WebSocketClient("ws://localhost:" + simulator.getPort() + A_PATH, mock(EventListener.class));
         wsClient.start();
         wsClient.sendTextMessage(TEXT_MESSAGE);
         Helpers.sleepUninterrupted(50); //UC the other simulator should wait for server message

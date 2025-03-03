@@ -3,7 +3,6 @@ package com.aknopov.wssimulator;
 import java.util.List;
 
 import com.aknopov.wssimulator.scenario.Event;
-import com.aknopov.wssimulator.scenario.History;
 import com.aknopov.wssimulator.scenario.Scenario;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
 
@@ -28,9 +27,9 @@ public interface WebSocketSimulator {
     /**
      * Gets scenario play history
      *
-     * @return the history
+     * @return list of events
      */
-    History getHistory();
+    List<Event> getHistory();
 
     /**
      * Gets actual port of the communication

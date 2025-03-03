@@ -15,7 +15,7 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
     public WebSocketClientSimulator(String serverUrl) {
         super("ClientSimulator");
         try {
-            this.wsClient = new WebSocketClient(serverUrl);
+            this.wsClient = new WebSocketClient(serverUrl, this);
         }
         catch (URISyntaxException e) {
             throw new IllegalArgumentException("Can't connect to '" + serverUrl + "'", e);
@@ -36,7 +36,7 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
 
     @Override
     public void stop() {
-        wsClient.stop();
+        wsClient.stop(); //UC?
         scenario.requestStop();
         history.addEvent(Event.create(EventType.STOPPED));
     }

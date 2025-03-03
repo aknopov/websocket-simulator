@@ -9,6 +9,7 @@ import org.mockito.InOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SimulatorEndpoint;
 import jakarta.websocket.CloseReason.CloseCode;
@@ -20,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -37,7 +39,7 @@ public class ClientServerTest extends BaseTest {
         logger.info("Server is running on port {}", server.getPort());
         logger.info("-------------------------------");
 
-        WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()));
+        WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()), mockListener);
         client.start();
         client.sendTextMessage(TEXT_MESSAGE);
         client.sendBinaryMessage(BINARY_MESSAGE);
@@ -63,7 +65,8 @@ public class ClientServerTest extends BaseTest {
         server.start();
         server.waitForStart(Duration.ofSeconds(1));
 
-        WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/another_path", server.getPort()));
+        WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/another_path", server.getPort()),
+                mock(EventListener.class));
         assertFalse(client.start());
         verify(mockListener, never()).onHandshake(any());
 

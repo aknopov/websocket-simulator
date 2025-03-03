@@ -26,11 +26,14 @@ import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
 import jakarta.websocket.CloseReason;
 
+import static com.aknopov.wssimulator.Utils.requireNonNull;
+
 /**
  * Common functionality of client and server simulators
  */
 public abstract class WebSocketSimulatorBase implements WebSocketSimulator, EventListener {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketSimulatorBase.class);
+    public static final int DYNAMIC_PORT = 0;
 
     protected final History history = new History();
     protected final Scenario scenario = new ScenarioImpl(this);
@@ -67,8 +70,8 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     @Override
-    public History getHistory() {
-        return history;
+    public List<Event> getHistory() {
+        return history.getEvents();
     }
 
     @Override
@@ -80,16 +83,15 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     @Override
     public void sendMessage(WebSocketMessage message) {
         switch (message.getMessageType()) {
-            case TEXT -> sendTextMessage(Utils.requireNonNull(message.getMessageText()));
-            case BINARY -> sendBinaryMessage(Utils.requireNonNull(message.getMessageBytes()));
+            case TEXT -> sendTextMessage(requireNonNull(message.getMessageText()));
+            case BINARY -> sendBinaryMessage(requireNonNull(message.getMessageBytes()));
         }
     }
 
     private void sendTextMessage(String message) {
-        logger.debug("Requested send text message");
+        logger.debug("Requested to send text '{}'", message);
         try {
-            Utils.requireNonNull(endpoint)
-                    .sendTextMessage(message);
+            requireNonNull(endpoint).sendTextMessage(message);
             history.addEvent(Event.create(EventType.SEND_MESSAGE, "Text message"));
         }
         catch (IllegalStateException e) {
@@ -101,10 +103,9 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendBinaryMessage(ByteBuffer message) {
-        logger.debug("Requested send binary message");
+        logger.debug("Requested send binary message with {} bytes", message.remaining());
         try {
-            Utils.requireNonNull(endpoint)
-                    .sendBinaryMessage(message);
+            requireNonNull(endpoint).sendBinaryMessage(message);
             history.addEvent(Event.create(EventType.SEND_MESSAGE, "Binary message"));
         }
         catch (IllegalStateException e) {
@@ -211,9 +212,9 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     @SuppressWarnings("unchecked")
     private <T> T waitFor(Act<?> act, Class<T> klaz) {
         logger.debug("Waiting {} for {} msec", klaz.getSimpleName(), act.delay().toMillis());
-        ResettableLock<T> lock = (ResettableLock<T>)Utils.requireNonNull(eventLocks.get(act.eventType()));
+        ResettableLock<T> lock = (ResettableLock<T>)requireNonNull(eventLocks.get(act.eventType()));
         try {
-            T ret = Utils.requireNonNull(lock.await(act.delay()));
+            T ret = requireNonNull(lock.await(act.delay()));
             history.addEvent(Event.create(act.eventType()));
             return ret;
         }
@@ -225,18 +226,18 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     @SuppressWarnings("unchecked")
     private <T> void releaseEvent(EventType eventType, T payload) {
         logger.debug("Releasing {}", payload.getClass().getSimpleName());
-        Utils.requireNonNull((ResettableLock<T>)eventLocks.get(eventType))
+        requireNonNull((ResettableLock<T>)eventLocks.get(eventType))
                 .release(payload);
     }
 
     @SuppressWarnings("unchecked")
     private static <T> void consumeData(Act<?> act, @Nullable T data) {
-        Utils.requireNonNull((Consumer<T>)act.consumer()).accept(data);
+        requireNonNull((Consumer<T>)act.consumer()).accept(data);
     }
 
     @SuppressWarnings("unchecked")
     private static <T> T provideData(Act<?> act, Class<T> unused) {
-        return Utils.requireNonNull((Supplier<T>)act.supplier()).get();
+        return requireNonNull((Supplier<T>)act.supplier()).get();
     }
 
     //

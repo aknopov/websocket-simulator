@@ -1,0 +1,97 @@
+<html>
+<body>
+<div>
+    <div>WebSocket Address:</div>
+    <input type="text" id="url" value="ws://localhost:8025/path"/>
+    <input type="button" id="connectBtn" value="CONNECT" onclick="connect()"/>
+</div>
+<br/>
+<div>
+    <div>Message:</div>
+    <input type="text" id="inputT" value="Hello!"/>
+    <input type="button" id="sendBtnT" value="SEND" onclick="sendT()" disabled="true"/>
+</div>
+<br/>
+<div>
+    <div>Binary Message:</div>
+    <input type="text" id="inputB" value="Hello!"/>
+    <input type="button" id="sendBtnB" value="SEND" onclick="sendB()" disabled="true"/>
+</div>
+<br/>
+<div id="output">
+    <p>Output</p>
+</div>
+</body>
+
+<script type="text/javascript">
+    var webSocket;
+    var url = document.getElementById("url");
+    var inputT = document.getElementById("inputT");
+    var inputB = document.getElementById("inputB");
+    var output = document.getElementById("output");
+    var connectBtn = document.getElementById("connectBtn");
+    var sendBtnT = document.getElementById("sendBtnT");
+    var sendBtnB = document.getElementById("sendBtnB");
+    var utf8Encode = new TextEncoder();
+
+    (function() {
+       translateEnterEvent(url, connectBtn);
+       translateEnterEvent(inputT, sendBtnT);
+       translateEnterEvent(inputB, sendBtnB);
+    })();
+
+    function connect() {
+        // open the connection if one does not exist
+        if (webSocket !== undefined
+                && webSocket.readyState !== WebSocket.CLOSED) {
+            return;
+        }
+        // Create a websocket
+        webSocket = new WebSocket(url.value);
+
+        webSocket.onopen = function(event) {
+            updateOutput("Connected!");
+            connectBtn.disabled = true;
+            sendBtnT.disabled = false;
+            sendBtnB.disabled = false;
+        };
+
+        webSocket.onmessage = function(event) {
+            updateOutput(event.data);
+        };
+
+        webSocket.onclose = function(event) {
+            updateOutput("Connection Closed");
+            connectBtn.disabled = false;
+            sendBtnT.disabled = true;
+            sendBtnB.disabled = true;
+        };
+    }
+
+    function sendT() {
+        webSocket.send(inputT.value);
+    }
+
+    function sendB() {
+        webSocket.send(utf8Encode.encode(inputB.value));
+    }
+
+    function closeSocket() {
+        webSocket.close();
+    }
+
+    function updateOutput(text) {
+        output.innerHTML += "<br/>" + text;
+    }
+
+    function translateEnterEvent(inputElement, button) {
+         inputElement.addEventListener("keyup", event => {
+              if(event.key !== "Enter") {
+                  return; // Use `.key` instead.
+              }
+              button.click();
+              event.preventDefault(); // No need to `return false;`.
+         });
+    }
+</script>
+</html>

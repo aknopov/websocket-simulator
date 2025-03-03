@@ -16,11 +16,13 @@ public class SimulatorsIntegrationTest {
     private static final String A_PATH = "/path";
     private static final int IDLE_SECS = 1;
     private static final int BUFFER_SIZE = 1234;
-    private static final String SERVER_RESPONSE = "All is good";
+    private static final String MESSAGE_1 = "Message 1";
+    private static final String MESSAGE_2 = "Message 2";
+    private static final String SERVER_RESPONSE_1 = "Coffee break";
+    private static final String SERVER_RESPONSE_2 = "All is good";
     private static final int UNAUTHORIZED_CODE = 401;
 
     private static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
-    private static final String MESSAGE_1 = "Message 1";
 
     @Test
     void testRunningSimulator() {
@@ -30,8 +32,8 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .wait(Duration.ZERO)
-                .sendMessage(SERVER_RESPONSE, Duration.ZERO)
-                .expectConnectionClosed(this::validateCloseCode, ACTION_WAIT)
+                .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
+                .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT)
                 .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
         serverSimulator.start();
 
@@ -52,8 +54,40 @@ public class SimulatorsIntegrationTest {
 
     @Test
     void testClientReconnect() {
-        // server close
-        // ... and reconnect with another client
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, WebSocketSimulatorBase.DYNAMIC_PORT);
+        serverSimulator.getScenario()
+                // 2
+                .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
+                .expectConnectionOpened(ACTION_WAIT)
+                .expectMessage(this::validateTextMessage, ACTION_WAIT)
+                .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
+                .closeConnection(CloseCodes.GOING_AWAY, Duration.ZERO)
+                // 2
+                .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
+                .expectConnectionOpened(ACTION_WAIT)
+                .expectMessage(this::validateTextMessage, ACTION_WAIT)
+                .sendMessage(SERVER_RESPONSE_2, Duration.ZERO)
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+        serverSimulator.start();
+
+        WebSocketClientSimulator clientSimulator1 = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
+        clientSimulator1.getScenario()
+                .expectConnectionOpened(ACTION_WAIT)
+                .sendMessage(MESSAGE_1, ACTION_WAIT.dividedBy(20))
+                .expectMessage(this::validateTextMessage, ACTION_WAIT)
+                .expectConnectionClosed(this::validateGoingAway, ACTION_WAIT);
+        clientSimulator1.start();
+
+        WebSocketClientSimulator clientSimulator2 = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
+        clientSimulator2.getScenario()
+                .expectConnectionOpened(ACTION_WAIT)
+                .sendMessage(MESSAGE_2, ACTION_WAIT.dividedBy(20))
+                .expectMessage(this::validateTextMessage, ACTION_WAIT)
+                .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
+        clientSimulator2.start();
+
+        serverSimulator.getScenario().awaitCompletion(ACTION_WAIT.multipliedBy(10));
+        serverSimulator.stop();
     }
 
     private void validateUpgrade(ProtocolUpgrade protocolUpgrade) {
@@ -69,11 +103,20 @@ public class SimulatorsIntegrationTest {
         }
     }
 
-    private void validateCloseCode(CloseCode closeCode) {
-        if (closeCode != CloseCodes.NORMAL_CLOSURE) {
-            throw new ValidationException("Expected socket to be closed with code " + CloseCodes.NORMAL_CLOSURE.getCode());
+    private void validateNormalClose(CloseCode closeCode) {
+        validateCloseCode(closeCode, CloseCodes.NORMAL_CLOSURE);
+    }
+
+    private void validateGoingAway(CloseCode closeCode) {
+        validateCloseCode(closeCode, CloseCodes.GOING_AWAY);
+    }
+
+    private void validateCloseCode(CloseCode closeCode, CloseCode expectedCode) {
+        if (closeCode != expectedCode) {
+            throw new ValidationException("Expected socket to be closed with code " + expectedCode.getCode());
         }
     }
+
     // Assuming authentication is done in handshake handler...
     private void validateUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
         int status = protocolUpgrade.status();

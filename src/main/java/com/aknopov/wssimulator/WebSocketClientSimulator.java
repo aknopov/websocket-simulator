@@ -41,7 +41,7 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
 
     @Override
     public void stop() {
-        wsClient.stop(); //UC?
+        wsClient.stop();
         scenario.requestStop();
         history.addEvent(Event.create(EventType.STOPPED));
     }

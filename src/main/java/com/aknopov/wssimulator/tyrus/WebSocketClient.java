@@ -80,7 +80,6 @@ public class WebSocketClient {
     public void stop() {
         Utils.requireNonNull(endpoint, NOT_OPENED_MESSAGE)
                 .closeConnection(CloseCodes.NORMAL_CLOSURE);
-        eventListener.onClose(CloseCodes.NORMAL_CLOSURE); //UC ???
         endpoint = null;
     }
 

@@ -6,7 +6,7 @@ package com.aknopov.wssimulator.scenario;
 public enum EventType {
     STARTED,
     STOPPED,
-    UPGRADE,
+    UPGRADE, //server
     OPEN,
     CLOSED,
     DO_CLOSE,

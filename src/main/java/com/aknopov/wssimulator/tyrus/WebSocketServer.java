@@ -37,6 +37,7 @@ public class WebSocketServer {
         this.server = new Server(host, port, contextPath, properties, WebSocketEndpoint.getConfigClass());
         this.stopLatch = new CountDownLatch(1);
         this.startLatch = new CountDownLatch(1);
+        logger.debug("Created WS server on port {}", port);
     }
 
     /**

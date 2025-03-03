@@ -115,6 +115,14 @@ public interface Scenario {
     void requestStop();
 
     /**
+     * Waits for scenario to be started
+     *
+     * @param waitDuration wait duration
+     * @return {@code true} if scenario started before wait expiry
+     */
+    boolean awaitStart(Duration waitDuration);
+
+    /**
      * Checks if all acts are performed
      *
      * @return check result
@@ -124,9 +132,9 @@ public interface Scenario {
     /**
      * Waits for scenario to be completed
      *
-     * @param duration wait duration
+     * @param waitDuration wait duration
      * @return {@code true} if scenario completed before wait expiry
      * @throws TimeoutException if wait was interrupted
      */
-    boolean awaitCompletion(Duration duration);
+    boolean awaitCompletion(Duration waitDuration);
 }

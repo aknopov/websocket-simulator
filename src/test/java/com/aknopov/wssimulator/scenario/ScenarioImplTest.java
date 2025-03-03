@@ -77,6 +77,13 @@ class ScenarioImplTest {
     }
 
     @Test
+    void testAwaitStart() {
+        assertFalse(scenario.awaitStart(Duration.ofMillis(ACT_DURATION_MSEC)));
+        scenario.play(act -> {});
+        assertTrue(scenario.awaitStart(Duration.ofMillis(ACT_DURATION_MSEC)));
+    }
+
+    @Test
     void testRequestStop() {
         assertFalse(scenario.isDone());
 

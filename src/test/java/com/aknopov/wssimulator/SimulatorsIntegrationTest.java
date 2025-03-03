@@ -1,15 +1,15 @@
 package com.aknopov.wssimulator;
 
 import java.time.Duration;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.ValidationException;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
 import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.CloseReason.CloseCodes;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class SimulatorsIntegrationTest {
     private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
@@ -17,11 +17,12 @@ public class SimulatorsIntegrationTest {
     private static final int IDLE_SECS = 1;
     private static final int BUFFER_SIZE = 1234;
     private static final String SERVER_RESPONSE = "All is good";
+    private static final int UNAUTHORIZED_CODE = 401;
 
     private static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
     private static final String MESSAGE_1 = "Message 1";
 
-//    @Test
+    @Test
     void testRunningSimulator() {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, WebSocketSimulatorBase.DYNAMIC_PORT);
         serverSimulator.getScenario()
@@ -45,10 +46,8 @@ public class SimulatorsIntegrationTest {
         serverSimulator.getScenario().awaitCompletion(ACTION_WAIT.multipliedBy(10));
         serverSimulator.stop();
 
-        List<Event> serverEvents = serverSimulator.getHistory();
-        List<Event> clientEvents = clientSimulator.getHistory();
-        System.err.println(serverEvents);
-        System.err.println(clientEvents);
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator.hasErrors());
     }
 
     @Test
@@ -73,6 +72,18 @@ public class SimulatorsIntegrationTest {
     private void validateCloseCode(CloseCode closeCode) {
         if (closeCode != CloseCodes.NORMAL_CLOSURE) {
             throw new ValidationException("Expected socket to be closed with code " + CloseCodes.NORMAL_CLOSURE.getCode());
+        }
+    }
+    // Assuming authentication is done in handshake handler...
+    private void validateUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
+        int status = protocolUpgrade.status();
+        boolean hasAuthHeader = protocolUpgrade.headers().containsKey("Authorization");
+
+        if ( !(hasAuthHeader && status == ProtocolUpgrade.SWITCH_SUCCESS_CODE
+                || !hasAuthHeader && status == UNAUTHORIZED_CODE)) {
+            throw new ValidationException(
+                    "Improper authentication handling: status " + status + " was returned when auth header " +
+                            (hasAuthHeader ? "was present" : "was not present"));
         }
     }
 }

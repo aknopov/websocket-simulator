@@ -1,6 +1,7 @@
 package com.aknopov.wssimulator;
 
 import java.net.URISyntaxException;
+import java.time.Duration;
 
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
@@ -10,6 +11,7 @@ import com.aknopov.wssimulator.tyrus.WebSocketClient;
  * Implementation of WebSocketSimulator for the client
  */
 public class WebSocketClientSimulator extends WebSocketSimulatorBase {
+    private static final Duration OPEN_WAIT_DURATION = Duration.ofSeconds(1);
     private final WebSocketClient wsClient;
 
     public WebSocketClientSimulator(String serverUrl) {
@@ -29,8 +31,11 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
 
     @Override
     public void start() {
-        wsClient.start();
+        // Start scenario first to wait on open
         scenarioThread.start();
+        getScenario().awaitStart(OPEN_WAIT_DURATION);
+        // ... then client
+        wsClient.start();
         history.addEvent(Event.create(EventType.STARTED));
     }
 

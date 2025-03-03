@@ -77,7 +77,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     @Override
     public void setEndpoint(SimulatorEndpoint endpoint) {
         this.endpoint = endpoint;
-        logger.debug("Endpoint set");
+        logger.debug("Connection opened");
     }
 
     @Override
@@ -92,7 +92,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
         logger.debug("Requested to send text '{}'", message);
         try {
             requireNonNull(endpoint).sendTextMessage(message);
-            history.addEvent(Event.create(EventType.SEND_MESSAGE, "Text message"));
+            history.addEvent(Event.create(EventType.SEND_MESSAGE, message));
         }
         catch (IllegalStateException e) {
             history.addEvent(Event.error("Attempted to send text message before establishing connection"));
@@ -106,7 +106,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
         logger.debug("Requested send binary message with {} bytes", message.remaining());
         try {
             requireNonNull(endpoint).sendBinaryMessage(message);
-            history.addEvent(Event.create(EventType.SEND_MESSAGE, "Binary message"));
+            history.addEvent(Event.create(EventType.SEND_MESSAGE, "Binary, len=" + message.remaining()));
         }
         catch (IllegalStateException e) {
             history.addEvent(Event.error("Attempted to send binary message before establishing connection"));
@@ -157,8 +157,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 });
                 case SEND_MESSAGE -> process(() -> {
                     WebSocketMessage message = provideData(act, WebSocketMessage.class);
-                    sendMessage(message);
-                    history.addEvent(Event.create(EventType.SEND_MESSAGE));
+                    sendMessage(message); // history is updated separately for text and binary
                 });
                 case DO_CLOSE -> process(() -> {
                     CloseReason.CloseCode code = provideData(act, CloseReason.CloseCode.class);

@@ -41,6 +41,7 @@ public class WebSocketClient {
         this.eventListener = eventListener;
         this.cec = ClientEndpointConfig.Builder.create()
                 .build();
+        logger.debug("Created WS client to port {}", getPort());
     }
 
     /**
@@ -64,6 +65,7 @@ public class WebSocketClient {
         try {
             // We get session through WebSocketEndpoint
             client.connectToServer(endpoint, cec, url);
+            logger.debug("Connected to server");
             return true;
         }
         catch (DeploymentException | IOException e) {
@@ -78,6 +80,7 @@ public class WebSocketClient {
     public void stop() {
         Utils.requireNonNull(endpoint, NOT_OPENED_MESSAGE)
                 .closeConnection(CloseCodes.NORMAL_CLOSURE);
+        eventListener.onClose(CloseCodes.NORMAL_CLOSURE); //UC ???
         endpoint = null;
     }
 

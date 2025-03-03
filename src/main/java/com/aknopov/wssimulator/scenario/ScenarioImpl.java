@@ -22,6 +22,7 @@ import jakarta.websocket.CloseReason.CloseCode;
 public class ScenarioImpl implements Scenario {
     private final Deque<Act<?>> acts;
     private final WebSocketSimulator simulator;
+    private final CountDownLatch started = new CountDownLatch(1);
     private final CountDownLatch stopRequested = new CountDownLatch(1);
     private final CountDownLatch allIsDone = new CountDownLatch(1);
 
@@ -92,6 +93,7 @@ public class ScenarioImpl implements Scenario {
 
     @Override
     public void play(Consumer<Act<?>> actProcessor) {
+        started.countDown();
         while (stopRequested.getCount() > 0 && !acts.isEmpty()) {
             Act<?> next = acts.pop();
             actProcessor.accept(next);
@@ -110,9 +112,19 @@ public class ScenarioImpl implements Scenario {
     }
 
     @Override
-    public boolean awaitCompletion(Duration duration) {
+    public boolean awaitStart(Duration waitDuration) {
         try {
-            return allIsDone.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+            return started.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e) {
+            throw new TimeoutException("Wait for scenario completion interrupted");
+        }
+    }
+
+    @Override
+    public boolean awaitCompletion(Duration waitDuration) {
+        try {
+            return allIsDone.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e) {
             throw new TimeoutException("Wait for scenario completion interrupted");

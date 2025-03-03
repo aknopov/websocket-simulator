@@ -33,23 +33,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class WebSocketServerSimulatorTest {
-    private static final Duration MAXIMUM_TEST_WAIT_TIME = Duration.ofMillis(10_000L);
-    private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
-
     private static final String A_PATH = "/path";
     private static final int IDLE_SECS = 1;
     private static final int BUFFER_SIZE = 1234;
     private static final int PORT = 5005;
-    private static final String TEXT_MESSAGE = "Hello!";
-    private static final ByteBuffer BINARY_MESSAGE =
-            ByteBuffer.wrap("Binary message".getBytes(StandardCharsets.UTF_8));
-    private static final String SERVER_RESPONSE = "All is good";
 
     private static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
-    private static final int UNAUTHORIZED_CODE = 401;
 
     private WebSocketServer mockServer = mock(WebSocketServer.class);
-    private SimulatorEndpoint mockEndpoint = mock(SimulatorEndpoint.class);
     private WebSocketSimulator simulator;
 
     @AfterEach
@@ -92,66 +83,5 @@ class WebSocketServerSimulatorTest {
                 .eventType());
         assertEquals(EventType.STOPPED, events.get(1)
                 .eventType());
-    }
-
-    @Test //UC to SimulatorsIntegrationTest
-    void testRunningSimulator() throws Exception {
-        simulator = new WebSocketServerSimulator(config, 0);
-        simulator.getScenario()
-                .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
-                .expectConnectionOpened(ACTION_WAIT)
-                .expectMessage(this::validateTextMessage, Duration.ofSeconds(1))
-                .wait(Duration.ZERO)
-                .sendMessage(SERVER_RESPONSE, Duration.ZERO)
-                .expectConnectionClosed(this::validateCloseCode, ACTION_WAIT)
-                .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
-        simulator.start();
-
-        WebSocketClient wsClient = new WebSocketClient("ws://localhost:" + simulator.getPort() + A_PATH, mock(EventListener.class));
-        wsClient.start();
-        wsClient.sendTextMessage(TEXT_MESSAGE);
-        Helpers.sleepUninterrupted(50); //UC the other simulator should wait for server message
-        wsClient.stop();
-
-        assertTrue(simulator.getScenario().awaitCompletion(MAXIMUM_TEST_WAIT_TIME));
-        simulator.stop();
-
-        assertFalse(simulator.hasErrors());
-    }
-
-    private void validateUpgrade(ProtocolUpgrade protocolUpgrade) {
-        int status = protocolUpgrade.status();
-        if (status != ProtocolUpgrade.SWITCH_SUCCESS_CODE) {
-            throw new ValidationException("Protocol wasn't upgraded - status code = " + status);
-        }
-    }
-
-    // Assuming authentication is done in handshake handler...
-    private void validateUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
-        int status = protocolUpgrade.status();
-        boolean hasAuthHeader = protocolUpgrade.headers().containsKey("Authorization");
-
-        if ( !(hasAuthHeader && status == ProtocolUpgrade.SWITCH_SUCCESS_CODE
-             || !hasAuthHeader && status == UNAUTHORIZED_CODE)) {
-            throw new ValidationException(
-                    "Improper authentication handling: status " + status + " was returned when auth header " +
-                    (hasAuthHeader ? "was present" : "was not present"));
-        }
-    }
-
-    private void validateTextMessage(WebSocketMessage message) throws ValidationException {
-        if (message.getMessageType() != WebSocketMessage.MessageType.TEXT) {
-            throw new ValidationException("Expected text message");
-        }
-    }
-
-    private void validateCloseCode(CloseCode closeCode) {
-        if (closeCode != CloseCodes.NORMAL_CLOSURE) {
-            throw new ValidationException("Expected socket to be closed with code " + CloseCodes.NORMAL_CLOSURE.getCode());
-        }
-    }
-
-    private void validateIoError(Throwable throwable) {
-        System.err.println("-- Got error: " + throwable);
     }
 }

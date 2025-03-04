@@ -29,7 +29,7 @@ import jakarta.websocket.server.ServerApplicationConfig;
 import jakarta.websocket.server.ServerEndpointConfig;
 
 /**
- * Implementation of web socket simulator endpoint tha works as a proxy to injected EventListener
+ * Implementation of web socket simulator endpoint that works as a proxy to injected EventListener
  */
 public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketEndpoint.class);
@@ -148,7 +148,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     }
 
     /**
-     * This class should be public!
+     * Tyrus requires this class to be public!
      */
     public static class MyServerApplicationConfig implements ServerApplicationConfig {
         private final EventListener eventListener;

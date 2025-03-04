@@ -15,7 +15,7 @@ import jakarta.websocket.CloseReason.CloseCode;
 public interface Scenario {
 
     /**
-     * Adds an act to scenario queue to wait for protocol upgrade
+     * Adds an act to scenario queue to wait for protocol upgrade (server-specific)
      *
      * @param upgradeValidator  protocol upgrade validator that throws {@code ValidationException} if failed
      * @param waitPeriod wait period to receive the handshake
@@ -50,7 +50,7 @@ public interface Scenario {
     Scenario sendMessage(ByteBuffer message, Duration initialDelay);
 
     /**
-     * Adds an act to the scenario queue to wait for a message from client.
+     * Adds an act to the scenario queue to wait for incoming message.
      *
      * @param validator client message validator
      * @param waitPeriod wait period to receive the message
@@ -59,7 +59,7 @@ public interface Scenario {
     Scenario expectMessage(Consumer<WebSocketMessage> validator, Duration waitPeriod);
 
     /**
-     * Adds an act to scenario queue to wait for web socket close from client.<br/>
+     * Adds an act to scenario queue to wait for websocket close.<br/>
      *
      * @param validator close reason validator
      * @param waitPeriod maximum wait time
@@ -68,7 +68,7 @@ public interface Scenario {
     Scenario expectConnectionClosed(Consumer<CloseCode> validator, Duration waitPeriod);
 
     /**
-     * Adds an act to scenario queue to close connection to client.
+     * Adds an act to scenario queue to close connection.
      *
      * @param closeCode code for closing connection
      * @param initialDelay delay before closing connection
@@ -83,7 +83,7 @@ public interface Scenario {
      * @param waitPeriod wait period to receive the error
      * @return this instance
      */
-    Scenario expectIoError(Consumer<Throwable> validator, Duration waitPeriod); //UC dubious - create test
+    Scenario expectIoError(Consumer<Throwable> validator, Duration waitPeriod); //UC dubious - needs test
 
     /**
      * Adds an act to scenario queue to perform arbitrary functionality.

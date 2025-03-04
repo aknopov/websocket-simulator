@@ -8,7 +8,7 @@ import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.SessionConfig;
 
 /**
- * This class provides access to a centralized HK2 service locator
+ * This class provides access to a centralized service locator
  */
 public class ServiceLocator {
 
@@ -26,7 +26,6 @@ public class ServiceLocator {
      * @param <T> class type
      */
     public static <T> T findOrCreate(Class<T> klaz) {
-//        return klaz.cast(BINDINGS.computeIfAbsent(klaz, ServiceLocator::createInstance));
         return getOrCreateInstance(klaz);
     }
 
@@ -34,10 +33,12 @@ public class ServiceLocator {
     private static synchronized <T> T getOrCreateInstance(Class<T> klaz) {
         Object value = BINDINGS.getOrDefault(klaz, klaz);
 
+        // if value is an Object - return it
         if (!(value instanceof Class)) {
             return klaz.cast(value);
         }
 
+        // If value is class - create instance
         try {
             return ((Class<T>)value).getDeclaredConstructor().newInstance();
         }

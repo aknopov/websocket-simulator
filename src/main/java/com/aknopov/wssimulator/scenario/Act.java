@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 /**
  * Single action in a scenario that either consumes data or provides it.
  *
- * @param delay delay before performing the act
+ * @param delay delay before performing the act or waiting for it (depending on the event type)
  * @param eventType the act type
  * @param consumer action to perform with an argument
  * @param supplier data supplier for server actions

@@ -10,6 +10,7 @@ import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.CloseReason.CloseCodes;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimulatorsIntegrationTest {
     private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
@@ -45,7 +46,7 @@ public class SimulatorsIntegrationTest {
                 .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         clientSimulator.start();
 
-        serverSimulator.getScenario().awaitCompletion(ACTION_WAIT.multipliedBy(10));
+        assertTrue(serverSimulator.getScenario().awaitCompletion(ACTION_WAIT.multipliedBy(10)));
         serverSimulator.stop();
 
         assertFalse(serverSimulator.hasErrors());
@@ -56,13 +57,13 @@ public class SimulatorsIntegrationTest {
     void testClientReconnect() {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, WebSocketSimulatorBase.DYNAMIC_PORT);
         serverSimulator.getScenario()
-                // 2
+                // client 1
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
                 .closeConnection(CloseCodes.GOING_AWAY, Duration.ZERO)
-                // 2
+                // client 2
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
@@ -86,7 +87,7 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
         clientSimulator2.start();
 
-        serverSimulator.getScenario().awaitCompletion(ACTION_WAIT.multipliedBy(10));
+        assertTrue(serverSimulator.getScenario().awaitCompletion(ACTION_WAIT.multipliedBy(10)));
         serverSimulator.stop();
     }
 

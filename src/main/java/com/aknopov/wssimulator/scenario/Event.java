@@ -7,6 +7,7 @@ import java.time.Instant;
  *
  * @param eventTime the time of the event
  * @param eventType the type of the event
+ * @param description optional description
  */
 public record Event(Instant eventTime, EventType eventType, String description) {
     /**

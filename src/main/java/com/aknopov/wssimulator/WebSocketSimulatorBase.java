@@ -134,6 +134,16 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
         history.addEvent(Event.create(EventType.STOPPED));
     }
 
+    @Override
+    public boolean awaitScenarioCompletion(Duration waitDuration) {
+        return scenario.awaitCompletion(waitDuration);
+    }
+
+    @Override
+    public boolean isScenarioDone() {
+        return scenario.isDone();
+    }
+
     /**
      * Process scenario acts
      */

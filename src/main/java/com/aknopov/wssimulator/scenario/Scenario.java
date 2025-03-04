@@ -123,7 +123,7 @@ public interface Scenario {
     boolean awaitStart(Duration waitDuration);
 
     /**
-     * Checks if all acts are performed
+     * Checks if all acts were performed
      *
      * @return check result
      */

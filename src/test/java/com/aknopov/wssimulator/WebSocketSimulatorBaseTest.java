@@ -138,7 +138,7 @@ class WebSocketSimulatorBaseTest {
         simulator.start();
 
         Helpers.sleepUninterrupted(TEST_WAIT.toMillis() * 2);
-        assertTrue(simulator.getScenario().isDone());
+        assertTrue(simulator.isScenarioDone());
 
         List<Event> events = simulator.getHistory();
         assertEquals(1, events.size());
@@ -152,7 +152,7 @@ class WebSocketSimulatorBaseTest {
         simulator.start();
 
         Helpers.sleepUninterrupted(TEST_WAIT.toMillis() * 2);
-        assertTrue(simulator.getScenario().isDone());
+        assertTrue(simulator.isScenarioDone());
 
         List<Event> errors = simulator.getErrors();
         assertEquals(1, errors.size());

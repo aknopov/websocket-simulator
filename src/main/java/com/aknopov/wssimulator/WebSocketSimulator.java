@@ -1,5 +1,6 @@
 package com.aknopov.wssimulator;
 
+import java.time.Duration;
 import java.util.List;
 
 import com.aknopov.wssimulator.scenario.Event;
@@ -54,6 +55,22 @@ public interface WebSocketSimulator {
      * @param message the message
      */
     void sendMessage(WebSocketMessage message);
+
+    /**
+     * Waits for scenario to be completed
+     *
+     * @param waitDuration wait duration
+     * @return {@code true} if scenario completed before wait expiry
+     * @throws TimeoutException if wait was interrupted
+     */
+    boolean awaitScenarioCompletion(Duration waitDuration);
+
+    /**
+     * Checks if all scenario acts were performed
+     *
+     * @return check result
+     */
+    boolean isScenarioDone();
 
     /**
      * Checks if errors encountered while playing scenario

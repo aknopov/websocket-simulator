@@ -102,7 +102,6 @@ public class WebSocketServer {
         try {
             server.start();
             startLatch.countDown();
-
             stopLatch.await();
             logger.debug("WS server stopped");
         }

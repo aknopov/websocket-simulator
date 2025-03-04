@@ -35,7 +35,7 @@ class WebSocketClientSimulatorTest {
         try (MockedConstruction<WebSocketClient> clientMockClass = mockConstruction(WebSocketClient.class)) {
             WebSocketClientSimulator simulator = new WebSocketClientSimulator("ws://localhost:12345/path");
             simulator.start();
-            simulator.getScenario().awaitCompletion(Duration.ofMillis(10));
+            simulator.awaitScenarioCompletion(Duration.ofMillis(10));
             simulator.stop();
 
             List<WebSocketClient> instances = clientMockClass.constructed();

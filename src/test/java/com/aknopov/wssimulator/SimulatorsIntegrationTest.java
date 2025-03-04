@@ -53,7 +53,7 @@ public class SimulatorsIntegrationTest {
                 .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         clientSimulator.start();
 
-        assertTrue(serverSimulator.getScenario().awaitCompletion(LONG_WAIT));
+        assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
         serverSimulator.stop();
 
         assertFalse(serverSimulator.hasErrors());
@@ -94,7 +94,7 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
         clientSimulator2.start();
 
-        assertTrue(serverSimulator.getScenario().awaitCompletion(LONG_WAIT));
+        assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
         serverSimulator.stop();
     }
 
@@ -117,10 +117,10 @@ public class SimulatorsIntegrationTest {
                 .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         clientSimulator.start();
 
-        clientSimulator.getScenario().awaitCompletion(LONG_WAIT);
+        clientSimulator.awaitScenarioCompletion(LONG_WAIT);
 
         serverSimulator.stop();
-        assertTrue(serverSimulator.getScenario().awaitCompletion(ACTION_WAIT));
+        assertTrue(serverSimulator.awaitScenarioCompletion(ACTION_WAIT));
 
         List<Event> errors = serverSimulator.getErrors();
         assertEquals(1, errors.size());

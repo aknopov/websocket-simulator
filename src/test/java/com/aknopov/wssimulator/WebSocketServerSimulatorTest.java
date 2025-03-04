@@ -81,7 +81,7 @@ class WebSocketServerSimulatorTest {
                 .expectConnectionOpened(Duration.ofMillis(100));
 
         simulator.start();
-        assertTrue(simulator.getScenario().awaitCompletion(config.idleTimeout()));
+        assertTrue(simulator.awaitScenarioCompletion(config.idleTimeout()));
         simulator.stop();
 
         List<Event> errors = simulator.getErrors();

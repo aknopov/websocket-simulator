@@ -32,7 +32,7 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
     @Override
     public void start() {
         // Start scenario first to wait on open
-        scenarioThread.start();
+        super.start();
         getScenario().awaitStart(OPEN_WAIT_DURATION);
         // ... then client
         wsClient.start();
@@ -42,7 +42,6 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
     @Override
     public void stop() {
         wsClient.stop();
-        scenario.requestStop();
-        history.addEvent(Event.create(EventType.STOPPED));
+        super.stop();
     }
 }

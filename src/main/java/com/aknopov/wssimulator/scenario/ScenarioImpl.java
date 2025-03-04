@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
-import com.aknopov.wssimulator.TimeoutException;
+import com.aknopov.wssimulator.ScenarioInterruptedException;
 import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
 import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
@@ -94,11 +94,15 @@ public class ScenarioImpl implements Scenario {
     @Override
     public void play(Consumer<Act<?>> actProcessor) {
         started.countDown();
-        while (stopRequested.getCount() > 0 && !acts.isEmpty()) {
-            Act<?> next = acts.pop();
-            actProcessor.accept(next);
+        try {
+            while (stopRequested.getCount() > 0 && !acts.isEmpty()) {
+                Act<?> next = acts.pop();
+                actProcessor.accept(next);
+            }
         }
-        allIsDone.countDown();
+        finally {
+            allIsDone.countDown();
+        }
     }
 
     @Override
@@ -117,7 +121,7 @@ public class ScenarioImpl implements Scenario {
             return started.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e) {
-            throw new TimeoutException("Wait for scenario completion interrupted");
+            throw new ScenarioInterruptedException(e);
         }
     }
 
@@ -127,7 +131,7 @@ public class ScenarioImpl implements Scenario {
             return allIsDone.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e) {
-            throw new TimeoutException("Wait for scenario completion interrupted");
+            throw new ScenarioInterruptedException(e);
         }
     }
 }

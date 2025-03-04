@@ -18,6 +18,7 @@ import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,18 +41,6 @@ class WebSocketSimulatorBaseTest {
         @Override
         public int getPort() {
             return -1;
-        }
-
-        @Override
-        public void start() {
-            scenarioThread.start();
-            history.addEvent(Event.create(EventType.STARTED));
-        }
-
-        @Override
-        public void stop() {
-            scenario.requestStop();
-            history.addEvent(Event.create(EventType.STOPPED));
         }
     }
 
@@ -118,20 +107,42 @@ class WebSocketSimulatorBaseTest {
     }
 
     @Test
+    void testStart() {
+        assertNotNull(simulator.scenarioThread);
+        assertFalse(simulator.scenarioThread.isAlive());
+
+        simulator.start();
+
+        assertTrue(simulator.scenarioThread.isAlive());
+    }
+
+    @Test
+    void testStop() {
+        simulator.getScenario()
+                .wait(TEST_WAIT);
+        simulator.start();
+
+        simulator.getScenario().awaitStart(TEST_WAIT);
+        simulator.stop();
+        Helpers.sleepUninterrupted(TEST_WAIT.toMillis());
+
+        List<Event> errors = simulator.getErrors();
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0).description().startsWith("Scenario run interrupted:"));
+    }
+
+    @Test
     void testWait() {
         simulator.getScenario()
                 .wait(TEST_WAIT);
         simulator.start();
 
-        Helpers.sleepUninterrupted(TEST_WAIT.toMillis() / 2);
-        simulator.getThread().interrupt();
+        Helpers.sleepUninterrupted(TEST_WAIT.toMillis() * 2);
+        assertTrue(simulator.getScenario().isDone());
 
-        simulator.stop();
-        simulator.scenario.awaitCompletion(TEST_WAIT);
-
-        List<Event> errors = simulator.getErrors();
-        assertEquals(1, errors.size());
-        assertTrue(errors.get(0).description().startsWith("Expected action didn't happen at"));
+        List<Event> events = simulator.getHistory();
+        assertEquals(1, events.size());
+        assertEquals(EventType.WAIT, events.get(0).eventType());
     }
 
     @Test
@@ -140,14 +151,11 @@ class WebSocketSimulatorBaseTest {
                 .expectConnectionOpened(TEST_WAIT);
         simulator.start();
 
-        Helpers.sleepUninterrupted(TEST_WAIT.toMillis() / 2);
-        simulator.getThread().interrupt();
-
-        simulator.stop();
-        simulator.scenario.awaitCompletion(TEST_WAIT);
+        Helpers.sleepUninterrupted(TEST_WAIT.toMillis() * 2);
+        assertTrue(simulator.getScenario().isDone());
 
         List<Event> errors = simulator.getErrors();
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).description().startsWith("Expected action didn't happen at"));
+        assertTrue(errors.get(0).description().startsWith("Data wasn't released in 200 msec"));
     }
 }

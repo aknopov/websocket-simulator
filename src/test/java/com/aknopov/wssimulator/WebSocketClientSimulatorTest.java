@@ -19,13 +19,6 @@ import static org.mockito.Mockito.verify;
 class WebSocketClientSimulatorTest {
 
     @Test
-    void testThreadCreation() {
-        WebSocketClientSimulator simulator = new WebSocketClientSimulator("ws://localhost:12345/path");
-
-        assertNotNull(simulator.getThread());
-    }
-
-    @Test
     void testInvalidUri() {
         assertThrows(IllegalArgumentException.class, () -> new WebSocketClientSimulator("://@example.com"));
     }

@@ -4,11 +4,12 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 /**
- * Exception thrown when waiting for data is being expired.
+ * Wraps an {@link InterruptedException} with an unchecked exception
+ * to cancel immediately running scenario.
  */
-public class TimeoutException extends RuntimeException {
-    public TimeoutException(String message) {
-        super(message);
+public class ScenarioInterruptedException extends RuntimeException {
+    public ScenarioInterruptedException(InterruptedException ex) {
+        super(ex);
     }
 
     /**

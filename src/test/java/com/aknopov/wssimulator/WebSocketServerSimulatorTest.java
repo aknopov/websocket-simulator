@@ -1,8 +1,5 @@
 package com.aknopov.wssimulator;
 
-import java.io.UncheckedIOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
@@ -11,25 +8,15 @@ import org.junit.jupiter.api.Test;
 
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
-import com.aknopov.wssimulator.scenario.ValidationException;
-import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
-import com.aknopov.wssimulator.tyrus.WebSocketClient;
 import com.aknopov.wssimulator.tyrus.WebSocketServer;
-import jakarta.websocket.CloseReason.CloseCode;
-import jakarta.websocket.CloseReason.CloseCodes;
 
+import static com.aknopov.wssimulator.WebSocketServerSimulator.DYNAMIC_PORT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class WebSocketServerSimulatorTest {
@@ -58,7 +45,7 @@ class WebSocketServerSimulatorTest {
 
     @Test
     void testDynamicPort() {
-        simulator = new WebSocketServerSimulator(config, 0);
+        simulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         assertNotEquals(0, simulator.getPort());
     }
 
@@ -74,14 +61,30 @@ class WebSocketServerSimulatorTest {
 
     @Test
     void testHistoryEvents() {
-        simulator = new WebSocketServerSimulator(config, 0);
+        simulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         simulator.stop();
 
-        var events = simulator.getHistory();
+        List<Event> events = simulator.getHistory();
         assertEquals(2, events.size());
         assertEquals(EventType.STARTED, events.get(0)
                 .eventType());
         assertEquals(EventType.STOPPED, events.get(1)
                 .eventType());
+    }
+
+    @Test
+    void testTimeoutOfAct() {
+        when(mockServer.waitForStart(any(Duration.class))).thenReturn(Boolean.TRUE);
+
+        simulator = new WebSocketServerSimulator(config, mockServer);
+        simulator.getScenario()
+                .expectConnectionOpened(Duration.ofMillis(100));
+
+        simulator.start();
+        assertTrue(simulator.getScenario().awaitCompletion(config.idleTimeout()));
+        simulator.stop();
+
+        List<Event> errors = simulator.getErrors();
+        assertEquals(1, errors.size());
     }
 }

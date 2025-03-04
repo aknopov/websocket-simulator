@@ -11,6 +11,7 @@ import com.aknopov.wssimulator.tyrus.WebSocketServer;
  * Implementation of WebSocketSimulator for the server
  */
 public class WebSocketServerSimulator extends WebSocketSimulatorBase {
+    public static final int DYNAMIC_PORT = 0;
     private final WebSocketServer wsServer;
 
     /**
@@ -53,14 +54,8 @@ public class WebSocketServerSimulator extends WebSocketSimulatorBase {
     }
 
     @Override
-    public void start() {
-        scenarioThread.start();
-    }
-
-    @Override
     public void stop() {
         wsServer.stop();
-        scenario.requestStop();
-        history.addEvent(Event.create(EventType.STOPPED));
+        super.stop();
     }
 }

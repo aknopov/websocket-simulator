@@ -83,7 +83,7 @@ public interface Scenario {
      * @param waitPeriod wait period to receive the error
      * @return this instance
      */
-    Scenario expectIoError(Consumer<Throwable> validator, Duration waitPeriod); //UC dubious - needs test
+    Scenario expectIoError(Consumer<Throwable> validator, Duration waitPeriod); //TODO dubious - needs test
 
     /**
      * Adds an act to scenario queue to perform arbitrary functionality.

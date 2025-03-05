@@ -195,7 +195,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             });
         }
         catch (ScenarioInterruptedException ex) {
-            history.addEvent(Event.error("Scenario run interrupted: " + ex.stringify()));
+            history.addEvent(Event.error("Scenario run has been interrupted: " + ex.stringify()));
         }
     }
 

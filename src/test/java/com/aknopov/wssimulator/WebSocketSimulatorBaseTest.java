@@ -35,7 +35,7 @@ class WebSocketSimulatorBaseTest {
 
     private static class TestWebSocketSimulator extends WebSocketSimulatorBase {
         protected TestWebSocketSimulator() {
-            super("Test");
+            super("TestSimulator");
         }
 
         @Override
@@ -108,11 +108,15 @@ class WebSocketSimulatorBaseTest {
 
     @Test
     void testStart() {
+        simulator.getScenario()
+                .wait(TEST_WAIT);
+
         assertNotNull(simulator.scenarioThread);
         assertFalse(simulator.scenarioThread.isAlive());
 
         simulator.start();
 
+        Helpers.sleepUninterrupted(TEST_WAIT.toMillis() / 10); // racing condition with server thread
         assertTrue(simulator.scenarioThread.isAlive());
     }
 
@@ -128,7 +132,7 @@ class WebSocketSimulatorBaseTest {
 
         List<Event> errors = simulator.getErrors();
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).description().startsWith("Scenario run interrupted:"));
+        assertTrue(errors.get(0).description().startsWith("Scenario run has been interrupted:"));
     }
 
     @Test

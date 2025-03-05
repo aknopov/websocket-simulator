@@ -35,7 +35,7 @@ void testClientBehavior() throws Exception {
 
   // Do your part with the client...
 
-  serverSimulator.getScenario().awaitCompletion(Duration.ofDays(1));
+  serverSimulator.awaitScenarioCompletion(Duration.ofDays(1));
   serverSimulator.stop();
 
   assertFalse(serverSimulator.hasErrors());
@@ -69,7 +69,7 @@ void testServerBehavior() throws Exception {
             .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
     clientSimulator.start();
 
-    clientSimulator.getScenario().awaitCompletion(Duration.ofDays(1));
+    clientSimulator.awaitScenarioCompletion(Duration.ofDays(1));
 
     assertFalse(clientSimulator.hasErrors());
 }

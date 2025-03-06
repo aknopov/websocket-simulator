@@ -115,8 +115,8 @@ class WebSocketSimulatorBaseTest {
         assertFalse(simulator.scenarioThread.isAlive());
 
         simulator.start();
+        simulator.awaitScenarioStart(TEST_WAIT);
 
-        Helpers.sleepUninterrupted(TEST_WAIT.toMillis() / 10); // racing condition with server thread
         assertTrue(simulator.scenarioThread.isAlive());
     }
 
@@ -126,9 +126,9 @@ class WebSocketSimulatorBaseTest {
                 .wait(TEST_WAIT);
         simulator.start();
 
-        simulator.getScenario().awaitStart(TEST_WAIT);
+        simulator.awaitScenarioStart(TEST_WAIT);
         simulator.stop();
-        Helpers.sleepUninterrupted(TEST_WAIT.toMillis());
+        simulator.awaitScenarioCompletion(TEST_WAIT);
 
         List<Event> errors = simulator.getErrors();
         assertEquals(1, errors.size());
@@ -141,7 +141,7 @@ class WebSocketSimulatorBaseTest {
                 .wait(TEST_WAIT);
         simulator.start();
 
-        Helpers.sleepUninterrupted(TEST_WAIT.toMillis() * 2);
+        simulator.awaitScenarioCompletion(TEST_WAIT.multipliedBy(2));
         assertTrue(simulator.isScenarioDone());
 
         List<Event> events = simulator.getHistory();
@@ -155,11 +155,20 @@ class WebSocketSimulatorBaseTest {
                 .expectConnectionOpened(TEST_WAIT);
         simulator.start();
 
-        Helpers.sleepUninterrupted(TEST_WAIT.toMillis() * 2);
+        simulator.awaitScenarioCompletion(TEST_WAIT.multipliedBy(2));
         assertTrue(simulator.isScenarioDone());
 
         List<Event> errors = simulator.getErrors();
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).description().startsWith("Data wasn't released in 200 msec"));
+    }
+
+    @Test
+    void testRecordError() {
+        assertEquals(0, simulator.getErrors().size());
+
+        simulator.recordError("An error");
+
+        assertEquals(1, simulator.getErrors().size());
     }
 }

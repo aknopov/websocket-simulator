@@ -1,6 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 ![GitHub Actions Workflow Status](https://github.com/aknopov/websocket-simulator/actions/workflows/gradle.yml/badge.svg?branch=main)
-![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/aknopov/websocket-simulator/main/.github/badges/jacoco.json)
+![Coverage](.github/badges/jacoco.svg)
 
 # WebSocket simulator library
 

@@ -12,8 +12,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.Scenario;
 import com.aknopov.wssimulator.WebSocketSimulator;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
 import jakarta.websocket.CloseReason;
 
 import static org.junit.jupiter.api.Assertions.*;

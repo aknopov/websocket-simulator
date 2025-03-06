@@ -4,8 +4,7 @@ import java.time.Duration;
 import java.util.List;
 
 import com.aknopov.wssimulator.scenario.Event;
-import com.aknopov.wssimulator.scenario.Scenario;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
 
 /**
  * An interface to web socket simulator

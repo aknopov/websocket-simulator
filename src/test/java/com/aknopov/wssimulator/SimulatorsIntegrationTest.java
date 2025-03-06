@@ -6,13 +6,14 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.aknopov.wssimulator.scenario.Event;
-import com.aknopov.wssimulator.scenario.Scenario;
 import com.aknopov.wssimulator.scenario.ValidationException;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
+import com.aknopov.wssimulator.simulator.WebSocketClientSimulator;
+import com.aknopov.wssimulator.simulator.WebSocketServerSimulator;
 import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.CloseReason.CloseCodes;
 
-import static com.aknopov.wssimulator.WebSocketServerSimulator.DYNAMIC_PORT;
+import static com.aknopov.wssimulator.simulator.WebSocketServerSimulator.DYNAMIC_PORT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,7 +46,8 @@ public class SimulatorsIntegrationTest {
                 .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
         serverSimulator.start();
 
-        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
+        WebSocketClientSimulator
+                clientSimulator = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
         clientSimulator.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)

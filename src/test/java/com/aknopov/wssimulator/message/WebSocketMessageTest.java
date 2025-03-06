@@ -1,9 +1,13 @@
-package com.aknopov.wssimulator.scenario.message;
+package com.aknopov.wssimulator.message;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
+
+import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
+import com.aknopov.wssimulator.message.TextWebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
 
 import static org.junit.jupiter.api.Assertions.*;
 

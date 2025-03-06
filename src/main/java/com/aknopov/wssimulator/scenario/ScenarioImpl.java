@@ -9,11 +9,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.Scenario;
 import com.aknopov.wssimulator.ScenarioInterruptedException;
 import com.aknopov.wssimulator.WebSocketSimulator;
-import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
+import com.aknopov.wssimulator.message.TextWebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
 import jakarta.websocket.CloseReason.CloseCode;
 
 /**

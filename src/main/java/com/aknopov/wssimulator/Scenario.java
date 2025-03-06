@@ -1,12 +1,11 @@
-package com.aknopov.wssimulator.scenario;
+package com.aknopov.wssimulator;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.function.Consumer;
 
-import com.aknopov.wssimulator.ProtocolUpgrade;
-import com.aknopov.wssimulator.TimeoutException;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
+import com.aknopov.wssimulator.scenario.Act;
 import jakarta.websocket.CloseReason.CloseCode;
 
 /**

@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.simulator;
 
 import java.net.URISyntaxException;
 import java.time.Duration;

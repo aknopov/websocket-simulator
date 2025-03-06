@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.simulator;
 
 import java.time.Duration;
 import java.util.List;
@@ -8,6 +8,7 @@ import org.mockito.MockedConstruction;
 
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
+import com.aknopov.wssimulator.simulator.WebSocketClientSimulator;
 import com.aknopov.wssimulator.tyrus.WebSocketClient;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

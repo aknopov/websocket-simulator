@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.simulator;
 
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
@@ -14,16 +14,24 @@ import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.aknopov.wssimulator.EventListener;
+import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.ResettableLock;
+import com.aknopov.wssimulator.SimulatorEndpoint;
+import com.aknopov.wssimulator.Utils;
+import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.scenario.Act;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
 import com.aknopov.wssimulator.scenario.History;
-import com.aknopov.wssimulator.scenario.Scenario;
+import com.aknopov.wssimulator.Scenario;
 import com.aknopov.wssimulator.scenario.ScenarioImpl;
+import com.aknopov.wssimulator.ScenarioInterruptedException;
+import com.aknopov.wssimulator.TimeoutException;
 import com.aknopov.wssimulator.scenario.ValidationException;
-import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
+import com.aknopov.wssimulator.message.TextWebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
 import jakarta.websocket.CloseReason;
 
 import static com.aknopov.wssimulator.Utils.requireNonNull;
@@ -196,8 +204,8 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 });
                 case ACTION -> process(() -> {
                     wait(act.delay());
-                    history.addEvent(Event.create(EventType.ACTION));
                     consumeData(act, null);
+                    history.addEvent(Event.create(EventType.ACTION));
                 });
                 default -> recordError("Internal error, act " + act.eventType() + " is not processable");
             }

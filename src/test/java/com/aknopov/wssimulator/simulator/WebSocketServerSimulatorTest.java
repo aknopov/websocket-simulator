@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.simulator;
 
 import java.time.Duration;
 import java.util.List;
@@ -6,11 +6,14 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import com.aknopov.wssimulator.SessionConfig;
+import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
+import com.aknopov.wssimulator.simulator.WebSocketServerSimulator;
 import com.aknopov.wssimulator.tyrus.WebSocketServer;
 
-import static com.aknopov.wssimulator.WebSocketServerSimulator.DYNAMIC_PORT;
+import static com.aknopov.wssimulator.simulator.WebSocketServerSimulator.DYNAMIC_PORT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

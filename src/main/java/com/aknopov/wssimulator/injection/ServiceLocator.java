@@ -38,7 +38,7 @@ public class ServiceLocator {
             return klaz.cast(value);
         }
 
-        // If value is class - create instance
+        // If value is a class - create instance
         try {
             return ((Class<T>)value).getDeclaredConstructor().newInstance();
         }

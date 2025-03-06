@@ -4,32 +4,29 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import javax.annotation.Nonnull;
+
 import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.Scenario;
 import com.aknopov.wssimulator.ScenarioInterruptedException;
-import com.aknopov.wssimulator.WebSocketSimulator;
-import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
+import com.aknopov.wssimulator.message.TextWebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
 import jakarta.websocket.CloseReason.CloseCode;
 
 /**
- * Scenario implementation
+ * Scenario implementation, includes state management
  */
 public class ScenarioImpl implements Scenario {
-    private final Deque<Act<?>> acts;
-    private final WebSocketSimulator simulator;
+    private final Deque<Act<?>> acts = new ArrayDeque<>();
     private final CountDownLatch started = new CountDownLatch(1);
     private final CountDownLatch stopRequested = new CountDownLatch(1);
-    private final CountDownLatch allIsDone = new CountDownLatch(1);
-
-    public ScenarioImpl(WebSocketSimulator simulator) {
-        this.simulator = simulator;
-        this.acts = new ArrayDeque<>();
-    }
+    private final CountDownLatch stopped = new CountDownLatch(1);
 
     @Override
     public Scenario expectProtocolUpgrade(Consumer<ProtocolUpgrade> upgradeValidator, Duration waitPeriod) {
@@ -39,7 +36,7 @@ public class ScenarioImpl implements Scenario {
 
     @Override
     public Scenario expectConnectionOpened(Duration waitPeriod) {
-        acts.add(new Act<>(waitPeriod, EventType.OPEN, simulator::setEndpoint));
+        acts.add(new Act<>(waitPeriod, EventType.OPEN, Act.VOID_ACT));
         return this;
     }
 
@@ -92,23 +89,6 @@ public class ScenarioImpl implements Scenario {
     }
 
     @Override
-    public void play(Consumer<Act<?>> actProcessor) {
-        started.countDown();
-        try {
-            while (stopRequested.getCount() > 0 && !acts.isEmpty()) {
-                Act<?> next = acts.pop();
-                actProcessor.accept(next);
-            }
-        }
-        catch (ScenarioInterruptedException ex) {
-            simulator.recordError("Scenario run has been interrupted: " + ex.stringify());
-        }
-        finally {
-            allIsDone.countDown();
-        }
-    }
-
-    @Override
     public void requestStop() {
         stopRequested.countDown();
     }
@@ -129,12 +109,37 @@ public class ScenarioImpl implements Scenario {
     }
 
     @Override
+    public void markCompletion() {
+        stopped.countDown();
+    }
+
+    @Override
+    @Deprecated //Not
     public boolean awaitCompletion(Duration waitDuration) {
         try {
-            return allIsDone.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
+            return stopped.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e) {
             throw new ScenarioInterruptedException(e);
+        }
+    }
+
+    @Override
+    @Nonnull
+    public Iterator<Act<?>> iterator() {
+        return new ActIterator();
+    }
+
+    private class ActIterator implements Iterator<Act<?>> {
+        @Override
+        public boolean hasNext() {
+            return stopRequested.getCount() > 0 && !acts.isEmpty();
+        }
+
+        @Override
+        public Act<?> next() {
+            started.countDown();
+            return acts.pop();
         }
     }
 }

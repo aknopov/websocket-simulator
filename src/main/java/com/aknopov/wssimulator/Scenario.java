@@ -1,18 +1,17 @@
-package com.aknopov.wssimulator.scenario;
+package com.aknopov.wssimulator;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.function.Consumer;
 
-import com.aknopov.wssimulator.ProtocolUpgrade;
-import com.aknopov.wssimulator.TimeoutException;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
+import com.aknopov.wssimulator.scenario.Act;
 import jakarta.websocket.CloseReason.CloseCode;
 
 /**
  * An interface to scenario
  */
-public interface Scenario {
+public interface Scenario extends Iterable<Act<?>> {
 
     /**
      * Adds an act to scenario queue to wait for protocol upgrade (server-specific)
@@ -103,13 +102,6 @@ public interface Scenario {
     Scenario wait(Duration waitPeriod);
 
     /**
-     * Plays scenario
-     *
-     * @param actProcessor act processor
-     */
-    void play(Consumer<Act<?>> actProcessor);
-
-    /**
      * Requests to stop executing scenario
      */
     void requestStop();
@@ -123,11 +115,16 @@ public interface Scenario {
     boolean awaitStart(Duration waitDuration);
 
     /**
-     * Checks if all acts were performed
+     * Checks if all acts were performed in the scenario
      *
      * @return check result
      */
     boolean isDone();
+
+    /**
+     * Sets flag that scenario was finished or interrupted.
+     */
+    void markCompletion();
 
     /**
      * Waits for scenario to be completed

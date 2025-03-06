@@ -1,3 +1,6 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+![GitHub Actions Workflow Status](https://github.com/aknopov/websocket-simulator/actions/workflows/gradle.yml/badge.svg?branch=main)
+
 # WebSocket simulator library
 
 Java library to simulate WebSocket agents (client or server) primarily for creating unit tests. The idea is borrowed from the [WireMock](https://wiremock.org/) library.
@@ -75,6 +78,7 @@ void testServerBehavior() throws Exception {
 }
 ```
 ## Noteworthy points
+- <u>Server simulator does not allow multiple connections.</u> Scenario is "played" sequentially in a dedicated thread. 
 - `SessionConfig` - server configuration class containing context path, idle timeout and buffer size.
 - `WebSocketMessage` - base class of text and binary messages.
 - `ProtocolUpgrade` - available in server protocol validators. Contains connection request URL, query parameters, headers

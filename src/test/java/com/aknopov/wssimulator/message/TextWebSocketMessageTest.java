@@ -1,8 +1,10 @@
-package com.aknopov.wssimulator.scenario.message;
+package com.aknopov.wssimulator.message;
 
 import org.junit.jupiter.api.Test;
 
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage.MessageType;
+import com.aknopov.wssimulator.message.TextWebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage.MessageType;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;

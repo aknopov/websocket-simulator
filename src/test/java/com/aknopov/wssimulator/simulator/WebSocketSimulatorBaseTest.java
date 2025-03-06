@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.simulator;
 
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
@@ -10,11 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.aknopov.wssimulator.SimulatorEndpoint;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
+import com.aknopov.wssimulator.TimeoutException;
 import com.aknopov.wssimulator.scenario.ValidationException;
-import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
+import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
+import com.aknopov.wssimulator.message.TextWebSocketMessage;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;

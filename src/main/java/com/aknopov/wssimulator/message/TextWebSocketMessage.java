@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator.scenario.message;
+package com.aknopov.wssimulator.message;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;

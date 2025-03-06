@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator;
+package com.aknopov.wssimulator.simulator;
 
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
@@ -14,16 +14,24 @@ import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.aknopov.wssimulator.EventListener;
+import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.ResettableLock;
+import com.aknopov.wssimulator.SimulatorEndpoint;
+import com.aknopov.wssimulator.Utils;
+import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.scenario.Act;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
 import com.aknopov.wssimulator.scenario.History;
-import com.aknopov.wssimulator.scenario.Scenario;
+import com.aknopov.wssimulator.Scenario;
 import com.aknopov.wssimulator.scenario.ScenarioImpl;
+import com.aknopov.wssimulator.ScenarioInterruptedException;
+import com.aknopov.wssimulator.TimeoutException;
 import com.aknopov.wssimulator.scenario.ValidationException;
-import com.aknopov.wssimulator.scenario.message.BinaryWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.TextWebSocketMessage;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
+import com.aknopov.wssimulator.message.TextWebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
 import jakarta.websocket.CloseReason;
 
 import static com.aknopov.wssimulator.Utils.requireNonNull;
@@ -35,7 +43,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     private static final Logger logger = LoggerFactory.getLogger(WebSocketSimulatorBase.class);
 
     protected final History history = new History();
-    protected final Scenario scenario = new ScenarioImpl(this);
+    protected final Scenario scenario = new ScenarioImpl();
     protected final Thread scenarioThread;
     @Nullable
     protected SimulatorEndpoint endpoint;
@@ -64,8 +72,8 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
         return history.getEvents();
     }
 
-    @Override
-    public void setEndpoint(SimulatorEndpoint endpoint) {
+    // VisibleForTesting
+    void setEndpoint(SimulatorEndpoint endpoint) {
         this.endpoint = endpoint;
         logger.debug("Connection opened");
     }
@@ -119,8 +127,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 .toList();
     }
 
-    @Override
-    public void recordError(String message) {
+    protected void recordError(String message) {
         history.addEvent(Event.error(message));
     }
 
@@ -158,50 +165,61 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
      * Process scenario acts
      */
     private void playScenario() {
-        scenario.play(act -> {
-            switch (act.eventType()) {
-                case UPGRADE -> process(() -> {
-                    ProtocolUpgrade protoUpgrade = waitFor(act, ProtocolUpgrade.class);
-                    consumeData(act, protoUpgrade);
-                });
-                case OPEN -> process(() -> {
-                    SimulatorEndpoint endpoint = waitFor(act, SimulatorEndpoint.class);
-                    consumeData(act, endpoint); // this triggers `setEndpoint(endpoint)`
-                });
-                case CLOSED -> {
-                    CloseReason.CloseCode code = waitFor(act, CloseReason.CloseCode.class);
-                    consumeData(act, code);
-                }
-                case RECEIVE_MESSAGE -> process(() -> {
-                    WebSocketMessage message = waitFor(act, WebSocketMessage.class);
-                    consumeData(act, message);
-                });
-                case IO_ERROR -> process(() -> {
-                    Throwable error = waitFor(act, Throwable.class);
-                    consumeData(act, error);
-                });
-                case SEND_MESSAGE -> process(() -> {
-                    WebSocketMessage message = provideData(act, WebSocketMessage.class);
-                    sendMessage(message); // history is updated separately for text and binary
-                });
-                case DO_CLOSE -> process(() -> {
-                    CloseReason.CloseCode code = provideData(act, CloseReason.CloseCode.class);
-                    Utils.requireNonNull(endpoint)
-                            .closeConnection(code);
-                    history.addEvent(Event.create(EventType.DO_CLOSE));
-                });
-                case WAIT -> process(() -> {
-                    wait(act.delay());
-                    history.addEvent(Event.create(EventType.WAIT));
-                });
-                case ACTION -> process(() -> {
-                    wait(act.delay());
-                    history.addEvent(Event.create(EventType.ACTION));
-                    consumeData(act, null);
-                });
-                default -> recordError("Internal error, act " + act.eventType() + " is not processable");
+        try {
+            for (Act<?> act: scenario) {
+                playOneAct(act);
             }
-        });
+        }
+        catch (ScenarioInterruptedException ex) {
+            recordError("Scenario run has been interrupted: " + ex.stringify());
+        }
+        finally {
+            scenario.markCompletion();
+        }
+    }
+
+    private void playOneAct(Act<?> act) {
+        switch (act.eventType()) {
+            case UPGRADE -> process(() -> {
+                ProtocolUpgrade protoUpgrade = waitFor(act, ProtocolUpgrade.class);
+                consumeData(act, protoUpgrade);
+            });
+            case OPEN -> process(() -> {
+                this.endpoint = waitFor(act, SimulatorEndpoint.class);
+            });
+            case CLOSED -> {
+                CloseReason.CloseCode code = waitFor(act, CloseReason.CloseCode.class);
+                consumeData(act, code);
+            }
+            case RECEIVE_MESSAGE -> process(() -> {
+                WebSocketMessage message = waitFor(act, WebSocketMessage.class);
+                consumeData(act, message);
+            });
+            case IO_ERROR -> process(() -> {
+                Throwable error = waitFor(act, Throwable.class);
+                consumeData(act, error);
+            });
+            case SEND_MESSAGE -> process(() -> {
+                WebSocketMessage message = provideData(act, WebSocketMessage.class);
+                sendMessage(message); // history is updated separately for text and binary
+            });
+            case DO_CLOSE -> process(() -> {
+                CloseReason.CloseCode code = provideData(act, CloseReason.CloseCode.class);
+                Utils.requireNonNull(endpoint)
+                        .closeConnection(code);
+                history.addEvent(Event.create(EventType.DO_CLOSE));
+            });
+            case WAIT -> process(() -> {
+                wait(act.delay());
+                history.addEvent(Event.create(EventType.WAIT));
+            });
+            case ACTION -> process(() -> {
+                wait(act.delay());
+                consumeData(act, null);
+                history.addEvent(Event.create(EventType.ACTION));
+            });
+            default -> recordError("Internal error, act " + act.eventType() + " is not processable");
+        }
     }
 
     // VisibleForTesting

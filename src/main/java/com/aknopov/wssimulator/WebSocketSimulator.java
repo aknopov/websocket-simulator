@@ -4,8 +4,7 @@ import java.time.Duration;
 import java.util.List;
 
 import com.aknopov.wssimulator.scenario.Event;
-import com.aknopov.wssimulator.scenario.Scenario;
-import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
+import com.aknopov.wssimulator.message.WebSocketMessage;
 
 /**
  * An interface to web socket simulator
@@ -17,13 +16,6 @@ public interface WebSocketSimulator {
      * @return the simulator scenario
      */
     Scenario getScenario();
-
-    /**
-     * Sets the only simulator endpoint to be able to act on server side
-     *
-     * @param endpoint the endpoint
-     */
-    void setEndpoint(SimulatorEndpoint endpoint);
 
     /**
      * Gets scenario play history
@@ -94,11 +86,4 @@ public interface WebSocketSimulator {
      * @return the list
      */
     List<Event> getErrors();
-
-    /**
-     * Records an error in the history from external source
-     *
-     * @param message the error message
-     */
-    void recordError(String message);
 }

@@ -6,7 +6,6 @@ import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +16,9 @@ import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.message.WebSocketMessage;
 import jakarta.websocket.CloseReason;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 class ScenarioImplTest {
@@ -66,15 +67,15 @@ class ScenarioImplTest {
     }
 
     @Test
-    void testPlaying() {
+    void testLooping() {
         assertFalse(scenario.isDone());
 
-        AtomicInteger idx = new AtomicInteger();
-        scenario.play((act) -> {
-            int i = idx.getAndIncrement();
+        int i = 0;
+        for (Act<?> act: scenario) {
             assertEquals(ACT_TYPES[i], act.eventType());
             assertEquals(TEST_DURATION, act.delay());
-        });
+            i++;
+        }
 
         assertTrue(scenario.isDone());
     }
@@ -82,7 +83,7 @@ class ScenarioImplTest {
     @Test
     void testAwaitStart() {
         assertFalse(scenario.awaitStart(Duration.ofMillis(ACT_DURATION_MSEC)));
-        scenario.play(act -> {});
+        scenario.iterator().next();
         assertTrue(scenario.awaitStart(Duration.ofMillis(ACT_DURATION_MSEC)));
     }
 
@@ -90,21 +91,34 @@ class ScenarioImplTest {
     void testRequestStop() {
         assertFalse(scenario.isDone());
 
-        AtomicInteger idx = new AtomicInteger();
-        scenario.play(act -> {
-            int i = idx.getAndIncrement();
-            if (i == ACT_TYPES.length / 2) {
+        for (Act<?> act: scenario) {
+            if (EventType.ACTION == act.eventType()) { // "perform" is in the middle
                 scenario.requestStop();
             }
-        });
+        }
 
         assertFalse(scenario.isDone());
     }
 
     @Test
+    void testMarkCompletion() {
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.schedule(scenario::markCompletion, WAIT_DURATION.toMillis(), TimeUnit.MILLISECONDS);
+
+        assertFalse(scenario.isDone());
+        scenario.awaitCompletion(WAIT_DURATION);
+        assertFalse(scenario.isDone());
+    }
+
+    @Test
+    @SuppressWarnings("StatementWithEmptyBody")
     void testWaitingForCompletion() {
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.schedule(() -> scenario.play(act -> {}), ACT_DURATION_MSEC, TimeUnit.MILLISECONDS);
+        scheduler.schedule(() -> {
+            for (var unused : scenario) {
+                // do nothing
+            }
+        }, ACT_DURATION_MSEC, TimeUnit.MILLISECONDS);
 
         assertFalse(scenario.isDone());
         scenario.awaitCompletion(WAIT_DURATION);

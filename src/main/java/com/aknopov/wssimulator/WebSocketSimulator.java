@@ -93,11 +93,4 @@ public interface WebSocketSimulator {
      * @return the list
      */
     List<Event> getErrors();
-
-    /**
-     * Records an error in the history from external source
-     *
-     * @param message the error message
-     */
-    void recordError(String message);
 }

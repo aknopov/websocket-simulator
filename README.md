@@ -75,6 +75,7 @@ void testServerBehavior() throws Exception {
 }
 ```
 ## Noteworthy points
+- <u>Server simulator does not allow multiple connections.</u> Scenario is "played" sequentially in a dedicated thread. 
 - `SessionConfig` - server configuration class containing context path, idle timeout and buffer size.
 - `WebSocketMessage` - base class of text and binary messages.
 - `ProtocolUpgrade` - available in server protocol validators. Contains connection request URL, query parameters, headers

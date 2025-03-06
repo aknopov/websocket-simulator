@@ -3,6 +3,9 @@ package com.aknopov.wssimulator.scenario;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +16,6 @@ import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.scenario.message.WebSocketMessage;
 import jakarta.websocket.CloseReason;
 
-import static com.aknopov.wssimulator.Helpers.sleepUninterrupted;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
@@ -100,11 +102,8 @@ class ScenarioImplTest {
 
     @Test
     void testWaitingForCompletion() {
-        new Thread(() -> {
-            scenario.play(act -> {
-                sleepUninterrupted(ACT_DURATION_MSEC);
-            });
-        }).start();
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.schedule(() -> scenario.play(act -> {}), ACT_DURATION_MSEC, TimeUnit.MILLISECONDS);
 
         assertFalse(scenario.isDone());
         scenario.awaitCompletion(WAIT_DURATION);

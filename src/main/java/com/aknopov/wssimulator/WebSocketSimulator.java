@@ -61,7 +61,16 @@ public interface WebSocketSimulator {
      *
      * @param waitDuration wait duration
      * @return {@code true} if scenario completed before wait expiry
-     * @throws TimeoutException if wait was interrupted
+     * @throws ScenarioInterruptedException if wait was interrupted
+     */
+    boolean awaitScenarioStart(Duration waitDuration);
+
+    /**
+     * Waits for scenario to be completed
+     *
+     * @param waitDuration wait duration
+     * @return {@code true} if scenario completed before wait expiry
+     * @throws ScenarioInterruptedException if wait was interrupted
      */
     boolean awaitScenarioCompletion(Duration waitDuration);
 
@@ -85,4 +94,11 @@ public interface WebSocketSimulator {
      * @return the list
      */
     List<Event> getErrors();
+
+    /**
+     * Records an error in the history from external source
+     *
+     * @param message the error message
+     */
+    void recordError(String message);
 }

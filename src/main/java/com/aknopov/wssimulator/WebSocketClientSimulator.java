@@ -33,7 +33,7 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
     public void start() {
         // Start scenario first to wait on open
         super.start();
-        getScenario().awaitStart(OPEN_WAIT_DURATION);
+        awaitScenarioStart(OPEN_WAIT_DURATION);
         // ... then client
         wsClient.start();
         history.addEvent(Event.create(EventType.STARTED));

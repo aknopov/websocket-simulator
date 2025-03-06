@@ -44,7 +44,7 @@ public class WebSocketServerSimulator extends WebSocketSimulatorBase {
             history.addEvent(Event.create(EventType.STARTED));
         }
         catch (RuntimeException e) {
-            history.addEvent(Event.error(e.getMessage()));
+            recordError(e.getMessage());
         }
     }
 

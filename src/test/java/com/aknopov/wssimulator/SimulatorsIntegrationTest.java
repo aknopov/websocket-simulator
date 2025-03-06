@@ -122,7 +122,6 @@ public class SimulatorsIntegrationTest {
         serverSimulator.stop();
         assertTrue(serverSimulator.awaitScenarioCompletion(ACTION_WAIT));
 
-        Helpers.sleepUninterrupted(SHORT_WAIT.toMillis()); // racing condition with server thread
         List<Event> errors = serverSimulator.getErrors();
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).description().startsWith("Scenario run has been interrupted:"));

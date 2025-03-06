@@ -100,6 +100,9 @@ public class ScenarioImpl implements Scenario {
                 actProcessor.accept(next);
             }
         }
+        catch (ScenarioInterruptedException ex) {
+            simulator.recordError("Scenario run has been interrupted: " + ex.stringify());
+        }
         finally {
             allIsDone.countDown();
         }

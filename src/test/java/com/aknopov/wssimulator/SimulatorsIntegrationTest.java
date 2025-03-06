@@ -2,6 +2,8 @@ package com.aknopov.wssimulator;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
@@ -63,16 +65,19 @@ public class SimulatorsIntegrationTest {
     }
 
     @Test
-    void testClientReconnect() {
+    void testClientReconnect() throws Exception {
+        CountDownLatch intermission = new CountDownLatch(1);
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         serverSimulator.getScenario()
-                // client 1
+                // act 1
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
                 .closeConnection(CloseCodes.GOING_AWAY, Duration.ZERO)
-                // client 2
+                // intermission
+                .perform(intermission::countDown, Duration.ZERO)
+                // act 2
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
@@ -86,7 +91,6 @@ public class SimulatorsIntegrationTest {
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .expectConnectionClosed(this::validateGoingAway, ACTION_WAIT);
-        clientSimulator1.start();
 
         WebSocketClientSimulator clientSimulator2 = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
         clientSimulator2.getScenario()
@@ -94,16 +98,23 @@ public class SimulatorsIntegrationTest {
                 .sendMessage(MESSAGE_2, SHORT_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
+
+        clientSimulator1.start();
+        intermission.await(ACTION_WAIT.toSeconds(), TimeUnit.SECONDS);
         clientSimulator2.start();
 
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
-        serverSimulator.stop();
+
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator1.hasErrors());
+        assertFalse(clientSimulator2.hasErrors());
     }
 
     @Test
     void testScenarioInterruption() {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         Scenario scenario = serverSimulator.getScenario();
+        // Expect two connections
         for (int i = 0; i < 2; i++) {
             scenario
                     .expectConnectionOpened(ACTION_WAIT)
@@ -112,6 +123,7 @@ public class SimulatorsIntegrationTest {
         }
         serverSimulator.start();
 
+        // Play scenario of the first client only
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
         clientSimulator.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
@@ -121,6 +133,7 @@ public class SimulatorsIntegrationTest {
 
         clientSimulator.awaitScenarioCompletion(LONG_WAIT);
 
+        // Interrupt
         serverSimulator.stop();
         assertTrue(serverSimulator.awaitScenarioCompletion(ACTION_WAIT));
 

@@ -1,17 +1,18 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 ![GitHub Actions Workflow Status](https://github.com/aknopov/websocket-simulator/actions/workflows/gradle.yml/badge.svg?branch=main)
+![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/aknopov/websocket-simulator/main/.github/badges/jacoco.json)
 
 # WebSocket simulator library
 
-Java library to simulate WebSocket agents (client or server) primarily for creating unit tests. The idea is borrowed from the [WireMock](https://wiremock.org/) library.
+Java library to simulate WebSocket agents (clients or servers) primarily for creating unit tests. The idea is borrowed from the [WireMock](https://wiremock.org/) library.
 
-The library is based on the [Tyrus](https://github.com/eclipse-ee4j/tyrus) implementation of the JSR WebSocket protocol.
+The library is based on the [Tyrus](https://github.com/eclipse-ee4j/tyrus) implementation of the WebSocket JSR.
 
 ## Overview
 
 Two major classes are `WebSocketServerSimulator` and `WebSocketClientSimulator`. The first is supposed to be used for
-WebSocket client tests. The other is for WebSocket server tests. The library contains unit tests that combine both 
-simulators to create sensible communication. See [SimulatorsIntegrationTest.java](src%2Ftest%2Fjava%2Fcom%2Faknopov%2Fwssimulator%2FSimulatorsIntegrationTest.java).
+WebSocket client tests. The other - for server tests. The library contains unit tests that combine both 
+simulators to create reasonable communication example. See [SimulatorsIntegrationTest.java](src%2Ftest%2Fjava%2Fcom%2Faknopov%2Fwssimulator%2FSimulatorsIntegrationTest.java).
 
 ## Example of server simulator
 
@@ -77,19 +78,19 @@ void testServerBehavior() throws Exception {
     assertFalse(clientSimulator.hasErrors());
 }
 ```
-## Noteworthy points
-- <u>Server simulator does not allow multiple connections.</u> Scenario is "played" sequentially in a dedicated thread. 
+## Notes
+- <ins>Server simulator does not allow multiple connections.</ins> Scenario is "played" sequentially in a dedicated thread
+  called "ClientSimulator" or "ServerSimulator". 
 - `SessionConfig` - server configuration class containing context path, idle timeout and buffer size.
 - `WebSocketMessage` - base class of text and binary messages.
-- `ProtocolUpgrade` - available in server protocol validators. Contains connection request URL, query parameters, headers
-  as well as the response status (such as HTTP-101). 
+- `ProtocolUpgrade` - available only in server protocol validators. Contains connection request URL, query parameters, headers
+  along with response status code (such as HTTP-101). 
 - `ValidationException` - exception thrown when validation fails.
 - `Event` - result of execution scenario act or validation. Contains event type (including `ERROR`) and optional description.
 - Simulator records all scenario acts, validation and timeout failures.
   Full list of events is available with `WebSocketSimulator::getHistory()` call.
-- Scenario failures are created by validators or timeouts. List of errors can be requested with
-  `WebSocketSimulator::getErrors` call. Simple check for errors can be done with `WebSocketSimulator::hasErrors`.
-- Both client and server scenarios are run in a separate thread called either "ClientSimulator" or "ServerSimulator"
+- List of errors can be filtered from other events with call of `WebSocketSimulator::getErrors`.
+  Simple check for errors can be done with `WebSocketSimulator::hasErrors`.
 - `Scenario::perform` method can be used to create control points in scenario timeline. For example -
 ```java
 CountDownLatch controlPoint = new CountDownLatch(1);

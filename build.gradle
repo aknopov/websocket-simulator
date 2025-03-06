@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
     id 'checkstyle'
     id('net.ltgt.errorprone') version '4.1.0'
     id('net.ltgt.nullaway') version '2.2.0'
@@ -37,6 +38,16 @@ dependencies {
 test {
     useJUnitPlatform()
     //testLogging.showStandardStreams = true
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        csv.required = true
+        xml.required = false
+        html.required = false
+    }
 }
 
 project.checkstyle.configDirectory.set(file('./checkstyle'))

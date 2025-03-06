@@ -12,14 +12,12 @@ import org.junit.jupiter.api.Test;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.Scenario;
-import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.message.WebSocketMessage;
 import jakarta.websocket.CloseReason;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
 class ScenarioImplTest {
 
@@ -39,8 +37,7 @@ class ScenarioImplTest {
     private static final int ACT_DURATION_MSEC = 50;
     private static final Duration WAIT_DURATION = Duration.ofMillis((ACT_TYPES.length + 2) * ACT_DURATION_MSEC);
 
-    private final WebSocketSimulator mockSimulator = mock(WebSocketSimulator.class);
-    private final Scenario scenario = new ScenarioImpl(mockSimulator);
+    private final Scenario scenario = new ScenarioImpl();
 
     private void validateText(WebSocketMessage message) {
     }

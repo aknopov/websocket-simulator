@@ -18,13 +18,6 @@ public interface WebSocketSimulator {
     Scenario getScenario();
 
     /**
-     * Sets the only simulator endpoint to be able to act on server side
-     *
-     * @param endpoint the endpoint
-     */
-    void setEndpoint(SimulatorEndpoint endpoint);
-
-    /**
      * Gets scenario play history
      *
      * @return list of events

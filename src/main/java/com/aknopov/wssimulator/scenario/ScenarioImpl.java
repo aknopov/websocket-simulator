@@ -14,7 +14,6 @@ import javax.annotation.Nonnull;
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.Scenario;
 import com.aknopov.wssimulator.ScenarioInterruptedException;
-import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
 import com.aknopov.wssimulator.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.message.WebSocketMessage;
@@ -24,16 +23,10 @@ import jakarta.websocket.CloseReason.CloseCode;
  * Scenario implementation, includes state management
  */
 public class ScenarioImpl implements Scenario {
-    private final Deque<Act<?>> acts;
-    private final WebSocketSimulator simulator;
+    private final Deque<Act<?>> acts = new ArrayDeque<>();
     private final CountDownLatch started = new CountDownLatch(1);
     private final CountDownLatch stopRequested = new CountDownLatch(1);
     private final CountDownLatch stopped = new CountDownLatch(1);
-
-    public ScenarioImpl(WebSocketSimulator simulator) {
-        this.simulator = simulator;
-        this.acts = new ArrayDeque<>();
-    }
 
     @Override
     public Scenario expectProtocolUpgrade(Consumer<ProtocolUpgrade> upgradeValidator, Duration waitPeriod) {
@@ -43,7 +36,7 @@ public class ScenarioImpl implements Scenario {
 
     @Override
     public Scenario expectConnectionOpened(Duration waitPeriod) {
-        acts.add(new Act<>(waitPeriod, EventType.OPEN, simulator::setEndpoint));
+        acts.add(new Act<>(waitPeriod, EventType.OPEN, Act.VOID_ACT));
         return this;
     }
 

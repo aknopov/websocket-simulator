@@ -43,7 +43,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     private static final Logger logger = LoggerFactory.getLogger(WebSocketSimulatorBase.class);
 
     protected final History history = new History();
-    protected final Scenario scenario = new ScenarioImpl(this);
+    protected final Scenario scenario = new ScenarioImpl();
     protected final Thread scenarioThread;
     @Nullable
     protected SimulatorEndpoint endpoint;
@@ -72,8 +72,8 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
         return history.getEvents();
     }
 
-    @Override
-    public void setEndpoint(SimulatorEndpoint endpoint) {
+    // VisibleForTesting
+    void setEndpoint(SimulatorEndpoint endpoint) {
         this.endpoint = endpoint;
         logger.debug("Connection opened");
     }
@@ -185,8 +185,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 consumeData(act, protoUpgrade);
             });
             case OPEN -> process(() -> {
-                SimulatorEndpoint endpoint = waitFor(act, SimulatorEndpoint.class);
-                consumeData(act, endpoint); // this triggers `setEndpoint(endpoint)`
+                this.endpoint = waitFor(act, SimulatorEndpoint.class);
             });
             case CLOSED -> {
                 CloseReason.CloseCode code = waitFor(act, CloseReason.CloseCode.class);

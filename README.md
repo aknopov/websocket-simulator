@@ -1,3 +1,6 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+![GitHub Actions Workflow Status](https://github.com/aknopov/websocket-simulator/actions/workflows/gradle.yml/badge.svg?branch=main)
+
 # WebSocket simulator library
 
 Java library to simulate WebSocket agents (client or server) primarily for creating unit tests. The idea is borrowed from the [WireMock](https://wiremock.org/) library.

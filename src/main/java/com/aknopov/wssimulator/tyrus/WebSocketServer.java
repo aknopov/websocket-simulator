@@ -1,7 +1,5 @@
 package com.aknopov.wssimulator.tyrus;
 
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -12,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jakarta.websocket.DeploymentException;
+
+import static com.aknopov.wssimulator.SocketFactory.getAvailablePort;
 
 /**
  * Server implementation
@@ -110,16 +110,6 @@ public class WebSocketServer {
         }
         catch (InterruptedException e) {
             logger.error("WS server thread interrupted", e);
-        }
-    }
-
-    private static int getAvailablePort() {
-        try (ServerSocket tempSocket = new ServerSocket(0)) {
-            return tempSocket.getLocalPort();
-        }
-        catch (IOException e) {
-            logger.error("Can't get available port", e);
-            return 0;
         }
     }
 }

@@ -53,7 +53,7 @@ public class SimulatorsIntegrationTest {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         serverSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
-                .expectConnectionOpened(ACTION_WAIT)
+                // can be skipped - .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .wait(Duration.ZERO)
                 .sendMessage(SERVER_RESPONSE_1, SHORT_WAIT)

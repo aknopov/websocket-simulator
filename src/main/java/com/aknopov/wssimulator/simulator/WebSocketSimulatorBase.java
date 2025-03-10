@@ -185,7 +185,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 consumeData(act, protoUpgrade);
             });
             case OPEN -> process(() -> {
-                this.endpoint = waitFor(act, SimulatorEndpoint.class);
+                waitFor(act, SimulatorEndpoint.class); // endpoint is already set
             });
             case CLOSED -> {
                 CloseCode code = waitFor(act, CloseCode.class);
@@ -295,6 +295,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
 
     @Override
     public void onOpen(SimulatorEndpoint endpoint, Map<String, Object> context) {
+        this.endpoint = endpoint;
         releaseEvent(EventType.OPEN, endpoint);
     }
 

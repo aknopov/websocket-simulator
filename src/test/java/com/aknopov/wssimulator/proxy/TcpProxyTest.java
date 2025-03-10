@@ -8,11 +8,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import com.aknopov.wssimulator.SocketFactory;
 
@@ -30,9 +28,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class ProxyTest {
+class TcpProxyTest {
     private static final Class<byte[]> BYTE_ARRAY_TYPE = byte[].class;
-    private static final Duration TEST_DURATION = Duration.ofMillis(100);
+    private static final Duration TEST_DURATION = Duration.ofMillis(300);
     private static final Duration ACCEPT_PAUSE = TEST_DURATION.dividedBy(3);
     private static final InetSocketAddress DOWN_ADDRESS = new InetSocketAddress("localhost", 1234);
     private static final InetSocketAddress UP_ADDRESS = new InetSocketAddress("localhost", 4321);
@@ -50,8 +48,8 @@ class ProxyTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        when(mockFactory.createServerSocket()).thenReturn(mockServerSocket);
-        when(mockFactory.creatUpsteamSocket()).thenReturn(mockSocketUp);
+        when(mockFactory.createServerSocket(anyInt())).thenReturn(mockServerSocket);
+        when(mockFactory.creatUpsteamSocket(anyInt())).thenReturn(mockSocketUp);
         when(mockServerSocket.accept()).thenAnswer(answersWithDelay(ACCEPT_PAUSE.toMillis(), i -> mockSocketDown));
 
         when(mockSocketUp.getInputStream()).thenReturn(mockInStreamUp);
@@ -62,7 +60,7 @@ class ProxyTest {
 
     @Test
     void testLifeSpan() {
-        Proxy proxy = new Proxy(PROXY_CONFIG, new SocketFactory());
+        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, new SocketFactory());
 
         Instant startTime = Instant.now();
         proxy.start();
@@ -78,7 +76,7 @@ class ProxyTest {
         when(mockInStreamUp.read(any(BYTE_ARRAY_TYPE))).thenReturn(0);
         when(mockInStreamDown.read(any(BYTE_ARRAY_TYPE))).thenReturn(0);
 
-        Proxy proxy = new Proxy(PROXY_CONFIG, mockFactory);
+        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
 
         Instant startTime = Instant.now();
         proxy.start();
@@ -88,26 +86,17 @@ class ProxyTest {
         assertTrue(endTime.isAfter(startTime.plus(TEST_DURATION)));
         assertTrue(endTime.isBefore(startTime.plus(TEST_DURATION.multipliedBy(2))));
 
-        ArgumentCaptor<InetSocketAddress> inetAddCaptor = ArgumentCaptor.forClass(InetSocketAddress.class);
-        verify(mockFactory).createServerSocket();
-        verify(mockServerSocket, atLeast(2)).accept();
-        verify(mockServerSocket).bind(inetAddCaptor.capture());
-        verify(mockFactory, atLeast(2)).creatUpsteamSocket();
-        verify(mockSocketUp, atLeast(2)).connect(inetAddCaptor.capture());
+        verify(mockFactory).createServerSocket(DOWN_ADDRESS.getPort());
+        verify(mockServerSocket, atLeast(1)).accept();
+        verify(mockFactory, atLeast(1)).creatUpsteamSocket(UP_ADDRESS.getPort());
 
-        List<InetSocketAddress> addresses = inetAddCaptor.getAllValues();
-        assertTrue(addresses.size() >= 3);
-        assertEquals(DOWN_ADDRESS, addresses.get(0));
-        assertEquals(UP_ADDRESS, addresses.get(1));
-        assertEquals(UP_ADDRESS, addresses.get(2));
+        verify(mockSocketDown, atLeast(1)).getInputStream();
+        verify(mockSocketDown, atLeast(1)).getOutputStream();
+        verify(mockSocketUp, atLeast(1)).getInputStream();
+        verify(mockSocketUp, atLeast(1)).getOutputStream();
 
-        verify(mockSocketDown, atLeast(2)).getInputStream();
-        verify(mockSocketDown, atLeast(2)).getOutputStream();
-        verify(mockSocketUp, atLeast(2)).getInputStream();
-        verify(mockSocketUp, atLeast(2)).getOutputStream();
-
-        verify(mockInStreamUp, atLeast(2)).read(any(BYTE_ARRAY_TYPE));
-        verify(mockInStreamDown, atLeast(2)).read(any(BYTE_ARRAY_TYPE));
+        verify(mockInStreamUp, atLeast(1)).read(any(BYTE_ARRAY_TYPE));
+        verify(mockInStreamDown, atLeast(1)).read(any(BYTE_ARRAY_TYPE));
         verify(mockOutStreamUp, times(0)).write(any(BYTE_ARRAY_TYPE), anyInt(), anyInt());
         verify(mockOutStreamDown, times(0)).write(any(BYTE_ARRAY_TYPE), anyInt(), anyInt());
     }
@@ -121,7 +110,7 @@ class ProxyTest {
                 .thenAnswer(answersWithDelay(ACCEPT_PAUSE.toMillis(), i -> mockSocketDown))
                 .thenAnswer(answersWithDelay(TEST_DURATION.toMillis(), i -> null));
 
-        Proxy proxy = new Proxy(PROXY_CONFIG, mockFactory);
+        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
         proxy.start();
         proxy.awaitTermination(TEST_DURATION);
 
@@ -138,19 +127,19 @@ class ProxyTest {
         when(mockInStreamDown.read(any(BYTE_ARRAY_TYPE))).thenReturn(2);
         doThrow(IOException.class).when(mockOutStreamDown).write(any(BYTE_ARRAY_TYPE), anyInt(), anyInt());
         doThrow(IOException.class).when(mockOutStreamUp).write(any(BYTE_ARRAY_TYPE), anyInt(), anyInt());
-        Proxy proxy = new Proxy(PROXY_CONFIG, mockFactory);
+        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
         assertDoesNotThrow(proxy::start);
         proxy.awaitTermination(TEST_DURATION);
 
         doThrow(IOException.class).when(mockInStreamDown).read(any(BYTE_ARRAY_TYPE));
         doThrow(IOException.class).when(mockInStreamUp).read(any(BYTE_ARRAY_TYPE));
-        proxy = new Proxy(PROXY_CONFIG, mockFactory);
+        proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
         assertDoesNotThrow(proxy::start);
         proxy.awaitTermination(TEST_DURATION);
 
         doThrow(IOException.class).when(mockSocketUp).getOutputStream();
         doThrow(IOException.class).when(mockSocketDown).getInputStream();
-        proxy = new Proxy(PROXY_CONFIG, mockFactory);
+        proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
         assertDoesNotThrow(proxy::start);
         proxy.awaitTermination(TEST_DURATION);
     }

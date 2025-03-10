@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 //VisibleForTesting
 public class SocketFactory {
     private static final Logger logger = LoggerFactory.getLogger(SocketFactory.class);
+    private static final int BACKLOG_LENGTH = 50;
 
     public static int getAvailablePort() {
         try (ServerSocket tempSocket = new ServerSocket(0)) {
@@ -24,12 +25,12 @@ public class SocketFactory {
         }
     }
 
-    public ServerSocket createServerSocket() throws IOException {
-        return new ServerSocket();
+    public ServerSocket createServerSocket(int port) throws IOException {
+        return new ServerSocket(port, BACKLOG_LENGTH, null);
     }
 
 
-    public Socket creatUpsteamSocket() throws IOException {
-        return new Socket();
+    public Socket creatUpsteamSocket(int port) throws IOException {
+        return new Socket("localhost", port);
     }
 }

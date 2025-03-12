@@ -3,7 +3,11 @@ package com.aknopov.wssimulator.tyrus;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -12,10 +16,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
+import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.Utils;
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.CloseReason.CloseCodes;
 import jakarta.websocket.DeploymentException;
+import jakarta.websocket.HandshakeResponse;
 
 /**
  * Client implementation.
@@ -37,9 +43,22 @@ public class WebSocketClient {
      * @param eventListener event listener
      */
     public WebSocketClient(String url, EventListener eventListener) throws URISyntaxException {
+        this(url, eventListener, HttpHeaders.of(Map.of(), (t, u) -> true));
+    }
+
+    /**
+     * Creates WebSocket client with an endpoint
+     *
+     * @param url server URL (e.g. "ws://localhost:8888/some/path")
+     * @param eventListener event listener
+     * @param extraHeaders extra headers
+     */
+    public WebSocketClient(String url, EventListener eventListener, HttpHeaders extraHeaders)
+            throws URISyntaxException {
         this.url = new URI(url);
         this.eventListener = eventListener;
         this.cec = ClientEndpointConfig.Builder.create()
+                .configurator(new ClientEndpointConfigurator(extraHeaders, eventListener))
                 .build();
         logger.debug("Created WS client to port {}", getPort());
     }
@@ -105,5 +124,34 @@ public class WebSocketClient {
     public void sendBinaryMessage(ByteBuffer message) {
         Utils.requireNonNull(endpoint, NOT_OPENED_MESSAGE)
                 .sendBinaryMessage(message);
+    }
+
+    /**
+     * Adds headers in server request.
+     * (Can check response headers - needs EventListener and `afterResponse`)
+     */
+    private static class ClientEndpointConfigurator extends ClientEndpointConfig.Configurator {
+        private final HttpHeaders clientHeaders;
+        private final Map<String, List<String>> allHeaders;
+        private final EventListener eventListener;
+
+        ClientEndpointConfigurator(HttpHeaders clientHeaders, EventListener eventListener) {
+            this.clientHeaders = clientHeaders;
+            this.eventListener = eventListener;
+            this.allHeaders = new HashMap<>();
+
+        }
+
+        @Override
+        public void beforeRequest(Map<String, List<String>> headers) {
+            headers.putAll(clientHeaders.map());
+            allHeaders.putAll(headers);
+        }
+
+        @Override
+        public void afterResponse(HandshakeResponse hr) {
+            ProtocolUpgrade handshake = new ProtocolUpgrade(URI.create("."), "", allHeaders, hr.getHeaders(), 0);
+            eventListener.onHandshake(handshake);
+        }
     }
 }

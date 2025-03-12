@@ -1,7 +1,9 @@
 package com.aknopov.wssimulator;
 
+import java.net.http.HttpHeaders;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +36,7 @@ public class SimulatorsIntegrationTest {
     private static final int UNAUTHORIZED_CODE = 401;
 
     private static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
+    private static final String AUTH_HEADER = "Authorization";
 
     @Test
     void testRunningSimulator() {
@@ -48,12 +51,38 @@ public class SimulatorsIntegrationTest {
                 .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
         serverSimulator.start();
 
-        WebSocketClientSimulator
-                clientSimulator = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
+        String url = "ws://localhost:" + serverSimulator.getPort() + A_PATH;
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
         clientSimulator.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+        clientSimulator.start();
+
+        assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
+        serverSimulator.stop();
+
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator.hasErrors());
+    }
+
+    @Test
+    void testAuthentication() {
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
+        serverSimulator.getScenario()
+                .expectProtocolUpgrade(this::validateUpgradeWithAuth, ACTION_WAIT)
+                .expectConnectionOpened(ACTION_WAIT)
+                .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT)
+                .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
+        serverSimulator.start();
+
+        String url = "ws://localhost:" + serverSimulator.getPort() + A_PATH;
+        HttpHeaders authHeaders = HttpHeaders.of(Map.of(AUTH_HEADER, List.of("token")), (t, u) -> true);
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, authHeaders);
+        clientSimulator.getScenario()
+                .expectProtocolUpgrade(this::validateClientUpgradeWithAuth, ACTION_WAIT)
+                .expectConnectionOpened(ACTION_WAIT)
                 .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         clientSimulator.start();
 
@@ -172,13 +201,29 @@ public class SimulatorsIntegrationTest {
     // Assuming authentication is done in handshake handler...
     private void validateUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
         int status = protocolUpgrade.status();
-        boolean hasAuthHeader = protocolUpgrade.headers().containsKey("Authorization");
+        boolean hasAuthHeader = protocolUpgrade.reqHeaders().containsKey("Authorization");
 
         if ( !(hasAuthHeader && status == ProtocolUpgrade.SWITCH_SUCCESS_CODE
-                || !hasAuthHeader && status == UNAUTHORIZED_CODE)) {
+           || !hasAuthHeader && status == UNAUTHORIZED_CODE)) {
             throw new ValidationException(
                     "Improper authentication handling: status " + status + " was returned when auth header " +
                             (hasAuthHeader ? "was present" : "was not present"));
+        }
+        protocolUpgrade.respHeaders().put("WWW-Authenticate", List.of("Bearer realm=\"Protected Area\""));
+    }
+
+    // Client side validator has only headers
+    private void validateClientUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
+        Map<String, List<String>> allRequestHeaders = protocolUpgrade.reqHeaders();
+        Map<String, List<String>> allResponseHeaders = protocolUpgrade.respHeaders();
+        if (!allRequestHeaders.containsKey(AUTH_HEADER)
+         || !allRequestHeaders.containsKey("Sec-WebSocket-Key")
+         || !allResponseHeaders.containsKey("Connection")
+         || !allResponseHeaders.containsKey("Sec-Websocket-Accept")
+         || !allResponseHeaders.containsKey("WWW-Authenticate")
+        ) {
+            throw new ValidationException(
+                    "Improper headers in client handshake: some mandatory headers are milling");
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.aknopov.wssimulator.simulator;
 
 import java.net.URISyntaxException;
+import java.net.http.HttpHeaders;
 import java.time.Duration;
 
 import com.aknopov.wssimulator.scenario.Event;
@@ -18,6 +19,17 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
         super("ClientSimulator");
         try {
             this.wsClient = new WebSocketClient(serverUrl, this);
+        }
+        catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Can't connect to '" + serverUrl + "'", e);
+        }
+    }
+
+
+    public WebSocketClientSimulator(String serverUrl, HttpHeaders extraHeaders) {
+        super("ClientSimulator");
+        try {
+            this.wsClient = new WebSocketClient(serverUrl, this, extraHeaders);
         }
         catch (URISyntaxException e) {
             throw new IllegalArgumentException("Can't connect to '" + serverUrl + "'", e);

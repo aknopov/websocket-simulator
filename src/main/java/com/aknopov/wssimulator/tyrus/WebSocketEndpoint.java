@@ -162,7 +162,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
         @Override
         public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> set) {
             return Set.of(ServerEndpointConfig.Builder.create(WebSocketEndpoint.class, sessionConfig.path())
-                            .configurator(new HandshakeInterceptor(eventListener))
+                            .configurator(new ServerEndpointConfigurator(eventListener))
                     .build());
         }
 
@@ -170,7 +170,6 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
         public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> set) {
             return Set.of();
         }
-
     }
 
     // These two can't be generic
@@ -188,19 +187,18 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
         }
     }
 
-    private static class HandshakeInterceptor extends ServerEndpointConfig.Configurator {
-
+    private static class ServerEndpointConfigurator extends ServerEndpointConfig.Configurator {
         private final EventListener eventListener;
 
-        public HandshakeInterceptor(EventListener eventListener) {
+        public ServerEndpointConfigurator(EventListener eventListener) {
             this.eventListener = eventListener;
         }
 
         @Override
         public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
             int status = (response instanceof TyrusUpgradeResponse tyrusResponse) ? tyrusResponse.getStatus() : -1;
-            eventListener.onHandshake(
-                    new ProtocolUpgrade(request.getRequestURI(), request.getQueryString(), request.getHeaders(), status));
+            eventListener.onHandshake(new ProtocolUpgrade(request.getRequestURI(), request.getQueryString(),
+                    request.getHeaders(), response.getHeaders(), status));
         }
     }
 }

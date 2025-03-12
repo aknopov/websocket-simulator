@@ -161,7 +161,6 @@ public class SimulatorsIntegrationTest {
         clientSimulator.start();
 
         clientSimulator.awaitScenarioCompletion(LONG_WAIT);
-        Thread.sleep(100);//UC
 
         // Interrupt
         serverSimulator.stop();

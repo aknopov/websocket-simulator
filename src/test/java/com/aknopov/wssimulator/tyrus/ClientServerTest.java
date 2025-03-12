@@ -40,9 +40,10 @@ public class ClientServerTest extends BaseTest {
         client.sendTextMessage(TEXT_MESSAGE);
         client.sendBinaryMessage(BINARY_MESSAGE);
         client.stop();
-        Thread.sleep(100);//UC
+
+        // Drain events
+        Thread.sleep(100);
         server.stop();
-//        server.waitForStop(Duration.ofSeconds(1));
 
         ArgumentCaptor<ProtocolUpgrade> handshakeCaptor = ArgumentCaptor.forClass(ProtocolUpgrade.class);
         verify(mockListener).onHandshake(handshakeCaptor.capture());

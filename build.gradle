@@ -37,7 +37,7 @@ dependencies {
 
 test {
     useJUnitPlatform()
-    testLogging.showStandardStreams = true //UC
+    testLogging.showStandardStreams = true
     finalizedBy jacocoTestReport
 }
 

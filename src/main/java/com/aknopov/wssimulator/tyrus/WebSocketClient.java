@@ -139,7 +139,6 @@ public class WebSocketClient {
             this.clientHeaders = clientHeaders;
             this.eventListener = eventListener;
             this.allHeaders = new HashMap<>();
-
         }
 
         @Override

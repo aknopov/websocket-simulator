@@ -23,6 +23,7 @@ public class WebSocketServer {
     private final Server server;
     private final CountDownLatch stopLatch;
     private final CountDownLatch startLatch;
+    private final CountDownLatch doneLatch;
 
     /**
      * Creates server instant.
@@ -37,6 +38,7 @@ public class WebSocketServer {
         this.server = new Server(host, port, contextPath, properties, WebSocketEndpoint.getConfigClass());
         this.stopLatch = new CountDownLatch(1);
         this.startLatch = new CountDownLatch(1);
+        this.doneLatch = new CountDownLatch(1);
         logger.debug("Created WS server on port {}", port);
     }
 
@@ -98,11 +100,29 @@ public class WebSocketServer {
         return false;
     }
 
+    /**
+     * Waits till server starts.
+     *
+     * @param waitDuration maximum period to wait start
+     * @return {@code true} if server started before expiry
+     */
+    public boolean waitForStop(Duration waitDuration) {
+        try {
+            return doneLatch.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e) {
+            logger.error("Interrupted while waiting for server stop", e);
+        }
+        return false;
+    }
+
     private void runServer() {
         try {
             server.start();
             startLatch.countDown();
             stopLatch.await();
+            server.stop();
+            doneLatch.countDown();
             logger.debug("WS server stopped");
         }
         catch (DeploymentException e) {

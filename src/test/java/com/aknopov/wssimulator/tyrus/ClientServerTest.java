@@ -42,17 +42,17 @@ public class ClientServerTest extends BaseTest {
         client.stop();
 
         server.stop();
+        server.waitForStop(Duration.ofSeconds(1));
 
         ArgumentCaptor<ProtocolUpgrade> handshakeCaptor = ArgumentCaptor.forClass(ProtocolUpgrade.class);
         verify(mockListener).onHandshake(handshakeCaptor.capture());
+        assertEquals(ProtocolUpgrade.SWITCH_SUCCESS_CODE, handshakeCaptor.getValue().status());
         verify(clientListener).onHandshake(any(ProtocolUpgrade.class));
         verify(mockListener).onOpen(any(SimulatorEndpoint.class), anyMap());
         verify(clientListener).onOpen(any(SimulatorEndpoint.class), anyMap());
         verify(mockListener).onTextMessage(TEXT_MESSAGE);
         verify(mockListener).onBinaryMessage(BINARY_MESSAGE);
         verify(mockListener).onClose(any(CloseCode.class));
-
-        assertEquals(ProtocolUpgrade.SWITCH_SUCCESS_CODE, handshakeCaptor.getValue().status());
     }
 
     @Test

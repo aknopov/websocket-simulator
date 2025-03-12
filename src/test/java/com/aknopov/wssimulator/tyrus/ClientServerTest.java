@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SimulatorEndpoint;
-import jakarta.websocket.CloseReason.CloseCode;
+import jakarta.websocket.CloseReason.CloseCodes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -40,9 +40,9 @@ public class ClientServerTest extends BaseTest {
         client.sendTextMessage(TEXT_MESSAGE);
         client.sendBinaryMessage(BINARY_MESSAGE);
         client.stop();
-
+        Thread.sleep(100);//UC
         server.stop();
-        server.waitForStop(Duration.ofSeconds(1));
+//        server.waitForStop(Duration.ofSeconds(1));
 
         ArgumentCaptor<ProtocolUpgrade> handshakeCaptor = ArgumentCaptor.forClass(ProtocolUpgrade.class);
         verify(mockListener).onHandshake(handshakeCaptor.capture());
@@ -52,7 +52,7 @@ public class ClientServerTest extends BaseTest {
         verify(clientListener).onOpen(any(SimulatorEndpoint.class), anyMap());
         verify(mockListener).onTextMessage(TEXT_MESSAGE);
         verify(mockListener).onBinaryMessage(BINARY_MESSAGE);
-        verify(mockListener).onClose(any(CloseCode.class));
+        verify(mockListener).onClose(CloseCodes.NORMAL_CLOSURE);
     }
 
     @Test

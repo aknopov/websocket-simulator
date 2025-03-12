@@ -140,7 +140,7 @@ public class SimulatorsIntegrationTest {
     }
 
     @Test
-    void testScenarioInterruption() {
+    void testScenarioInterruption() throws Exception {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         Scenario scenario = serverSimulator.getScenario();
         // Expect two connections
@@ -161,6 +161,7 @@ public class SimulatorsIntegrationTest {
         clientSimulator.start();
 
         clientSimulator.awaitScenarioCompletion(LONG_WAIT);
+        Thread.sleep(100);//UC
 
         // Interrupt
         serverSimulator.stop();
@@ -223,7 +224,7 @@ public class SimulatorsIntegrationTest {
          || !allResponseHeaders.containsKey("WWW-Authenticate")
         ) {
             throw new ValidationException(
-                    "Improper headers in client handshake: some mandatory headers are milling");
+                    "Improper headers in client handshake: some mandatory headers are missing");
         }
     }
 }

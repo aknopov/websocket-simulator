@@ -267,7 +267,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
 
     @SuppressWarnings("unchecked")
     private <T> void releaseEvent(EventType eventType, T payload) {
-        logger.debug("Releasing {}", payload.getClass().getSimpleName());
+        logger.debug("Releasing {} of {}", payload, payload.getClass().getSimpleName());
         requireNonNull((ResettableLock<T>)eventLocks.get(eventType))
                 .release(payload);
     }

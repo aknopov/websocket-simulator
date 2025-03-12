@@ -5,24 +5,20 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SimulatorEndpoint;
-import jakarta.websocket.CloseReason.CloseCode;
+import jakarta.websocket.CloseReason.CloseCodes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class ClientServerTest extends BaseTest {
@@ -38,23 +34,26 @@ public class ClientServerTest extends BaseTest {
         logger.info("Server is running on port {}", server.getPort());
         logger.info("-------------------------------");
 
-        WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()), mockListener);
+        EventListener clientListener = mock(EventListener.class);
+        WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()), clientListener);
         client.start();
         client.sendTextMessage(TEXT_MESSAGE);
         client.sendBinaryMessage(BINARY_MESSAGE);
         client.stop();
 
+        // Drain events
+        Thread.sleep(100);
         server.stop();
 
         ArgumentCaptor<ProtocolUpgrade> handshakeCaptor = ArgumentCaptor.forClass(ProtocolUpgrade.class);
-        InOrder inOrder = inOrder(mockListener);
-        inOrder.verify(mockListener).onHandshake(handshakeCaptor.capture());
-        inOrder.verify(mockListener, times(2)).onOpen(any(SimulatorEndpoint.class), anyMap());
-        inOrder.verify(mockListener).onTextMessage(TEXT_MESSAGE);
-        inOrder.verify(mockListener).onBinaryMessage(BINARY_MESSAGE);
-        inOrder.verify(mockListener, atLeastOnce()).onClose(any(CloseCode.class));
-
+        verify(mockListener).onHandshake(handshakeCaptor.capture());
         assertEquals(ProtocolUpgrade.SWITCH_SUCCESS_CODE, handshakeCaptor.getValue().status());
+        verify(clientListener).onHandshake(any(ProtocolUpgrade.class));
+        verify(mockListener).onOpen(any(SimulatorEndpoint.class), anyMap());
+        verify(clientListener).onOpen(any(SimulatorEndpoint.class), anyMap());
+        verify(mockListener).onTextMessage(TEXT_MESSAGE);
+        verify(mockListener).onBinaryMessage(BINARY_MESSAGE);
+        verify(mockListener).onClose(CloseCodes.NORMAL_CLOSURE);
     }
 
     @Test

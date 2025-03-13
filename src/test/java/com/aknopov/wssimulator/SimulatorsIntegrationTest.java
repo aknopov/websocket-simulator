@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SimulatorsIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class); //UC
 
-    private static final Duration ACTION_WAIT = Duration.ofSeconds(2);
+    private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
     private static final Duration SHORT_WAIT = Duration.ofMillis(50);
     private static final Duration LONG_WAIT = Duration.ofSeconds(10);
     private static final String A_PATH = "/path";
@@ -50,9 +50,9 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .wait(Duration.ZERO)
-                .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
+                .sendMessage(SERVER_RESPONSE_1, SHORT_WAIT)
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT)
-                .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
+                .perform(() -> System.out.println("** All is done **"), SHORT_WAIT);
         serverSimulator.start();
 
         String url = "ws://localhost:" + serverSimulator.getPort() + A_PATH;
@@ -61,7 +61,7 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         clientSimulator.start();
 
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
@@ -78,7 +78,7 @@ public class SimulatorsIntegrationTest {
                 .expectProtocolUpgrade(this::validateUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT)
-                .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
+                .perform(() -> System.out.println("** All is done **"), SHORT_WAIT);
         serverSimulator.start();
 
         String url = "ws://localhost:" + serverSimulator.getPort() + A_PATH;
@@ -87,7 +87,7 @@ public class SimulatorsIntegrationTest {
         clientSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateClientUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         clientSimulator.start();
 
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
@@ -106,16 +106,16 @@ public class SimulatorsIntegrationTest {
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
-                .closeConnection(CloseCodes.GOING_AWAY, Duration.ZERO)
+                .sendMessage(SERVER_RESPONSE_1, SHORT_WAIT)
+                .closeConnection(CloseCodes.GOING_AWAY, SHORT_WAIT)
                 // intermission
-                .perform(intermission::countDown, Duration.ZERO)
+                .perform(intermission::countDown, SHORT_WAIT)
                 // act 2
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                .sendMessage(SERVER_RESPONSE_2, Duration.ZERO)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .sendMessage(SERVER_RESPONSE_2, SHORT_WAIT)
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         serverSimulator.start();
 
         WebSocketClientSimulator clientSimulator1 = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
@@ -155,7 +155,7 @@ public class SimulatorsIntegrationTest {
                     .expectConnectionOpened(ACTION_WAIT)
                     .expectMessage(this::validateTextMessage, ACTION_WAIT)
                     .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT)
-                    .perform(intermission::countDown, Duration.ZERO);
+                    .perform(intermission::countDown, SHORT_WAIT);
         }
         serverSimulator.start();
 

@@ -203,10 +203,12 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 consumeData(act, error);
             });
             case SEND_MESSAGE -> process(() -> {
+                wait(act.delay());
                 WebSocketMessage message = provideData(act, WebSocketMessage.class);
                 sendMessage(message); // history is updated separately for text and binary
             });
             case DO_CLOSE -> process(() -> {
+                wait(act.delay());
                 CloseReason.CloseCode code = provideData(act, CloseReason.CloseCode.class);
                 Utils.requireNonNull(endpoint)
                         .closeConnection(code);

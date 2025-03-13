@@ -164,7 +164,7 @@ public class SimulatorsIntegrationTest {
         clientSimulator.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         clientSimulator.start();
 
         assertTrue(intermission.await(LONG_WAIT.toMillis(), TimeUnit.MILLISECONDS));

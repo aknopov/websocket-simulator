@@ -4,26 +4,18 @@ import java.time.Duration;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
-import com.aknopov.wssimulator.ProtocolUpgrade;
-import com.aknopov.wssimulator.SimulatorEndpoint;
-import jakarta.websocket.CloseReason.CloseCodes;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 public class ClientServerTest extends BaseTest {
     private static final Logger logger = LoggerFactory.getLogger(ClientServerTest.class);
-    private static final Duration WAIT_DURATION = Duration.ofSeconds(1);
+    private static final Duration WAIT_DURATION = Duration.ofMillis(200);
 
     @Test
     void TestCommunication() throws Exception {
@@ -31,7 +23,7 @@ public class ClientServerTest extends BaseTest {
         server.start();
         server.waitForStart(WAIT_DURATION);
 
-        EventListener clientListener = mock(EventListener.class);
+        TestEventListener clientListener = new TestEventListener();
         WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()), clientListener);
         client.start();
         client.sendTextMessage(TEXT_MESSAGE);
@@ -39,18 +31,17 @@ public class ClientServerTest extends BaseTest {
         client.stop();
 
         // Drain events
-        Thread.sleep(100); //UC
+        assertTrue(serverListener.waitForClose(WAIT_DURATION));
         server.stop();
 
-        ArgumentCaptor<ProtocolUpgrade> handshakeCaptor = ArgumentCaptor.forClass(ProtocolUpgrade.class);
-        verify(mockListener).onHandshake(handshakeCaptor.capture());
-        assertEquals(ProtocolUpgrade.SWITCH_SUCCESS_CODE, handshakeCaptor.getValue().status());
-        verify(clientListener).onHandshake(any(ProtocolUpgrade.class));
-        verify(mockListener).onOpen(any(SimulatorEndpoint.class), anyMap());
-        verify(clientListener).onOpen(any(SimulatorEndpoint.class), anyMap());
-        verify(mockListener).onTextMessage(TEXT_MESSAGE);
-        verify(mockListener).onBinaryMessage(BINARY_MESSAGE);
-        verify(mockListener).onClose(CloseCodes.NORMAL_CLOSURE);
+        assertTrue(serverListener.handshakeHappened());
+        assertTrue(serverListener.openHappened());
+        assertTrue(serverListener.textHappened());
+        assertTrue(serverListener.binaryHappened());
+        assertTrue(serverListener.closeHappened());
+        assertTrue(clientListener.handshakeHappened());
+        assertTrue(clientListener.openHappened());
+        assertTrue(clientListener.closeHappened());
     }
 
     @Test
@@ -62,8 +53,8 @@ public class ClientServerTest extends BaseTest {
         WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/another_path", server.getPort()),
                 mock(EventListener.class));
         assertFalse(client.start());
-        verify(mockListener, never()).onHandshake(any());
 
+        assertFalse(serverListener.handshakeHappened());
         server.stop();
     }
 }

@@ -63,8 +63,8 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator.hasErrors());
+        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
+        assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
     }
 
     @Test
@@ -89,8 +89,8 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator.hasErrors());
+        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
+        assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
     }
 
     @Test
@@ -135,9 +135,9 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator2.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator1.hasErrors());
-        assertFalse(clientSimulator2.hasErrors());
+        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
+        assertFalse(clientSimulator1.hasErrors(), "Client 1 errors: " + clientSimulator1.getErrors());
+        assertFalse(clientSimulator2.hasErrors(), "Client 2 errors: " + clientSimulator2.getErrors());
     }
 
     @Test
@@ -170,7 +170,7 @@ public class SimulatorsIntegrationTest {
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
         List<Event> errors = serverSimulator.getErrors();
-        assertEquals(1, errors.size());
+        assertEquals(1, errors.size(), "Server errors: " + serverSimulator.getErrors());
         assertTrue(errors.get(0).description().startsWith("Scenario run has been interrupted:"));
     }
 

@@ -8,8 +8,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+//UC import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.message.WebSocketMessage;
 import com.aknopov.wssimulator.scenario.Event;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimulatorsIntegrationTest {
-    private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class); //UC
+//    private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class); //UC
 
     private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
     private static final Duration SHORT_WAIT = Duration.ofMillis(50);
@@ -174,7 +174,7 @@ public class SimulatorsIntegrationTest {
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
         List<Event> errors = serverSimulator.getErrors();
-        logger.info("** testScenarioInterruption Errors: {}", errors);//UC
+//        logger.info("** testScenarioInterruption Errors: {}", errors);//UC
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).description().startsWith("Scenario run has been interrupted:"));
     }

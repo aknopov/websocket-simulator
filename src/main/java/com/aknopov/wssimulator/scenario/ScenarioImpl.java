@@ -114,7 +114,6 @@ public class ScenarioImpl implements Scenario {
     }
 
     @Override
-    @Deprecated //Not
     public boolean awaitCompletion(Duration waitDuration) {
         try {
             return stopped.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);

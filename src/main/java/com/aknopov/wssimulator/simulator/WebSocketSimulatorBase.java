@@ -32,7 +32,7 @@ import com.aknopov.wssimulator.scenario.ValidationException;
 import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
 import com.aknopov.wssimulator.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.message.WebSocketMessage;
-import jakarta.websocket.CloseReason;
+import jakarta.websocket.CloseReason.CloseCode;
 
 import static com.aknopov.wssimulator.Utils.requireNonNull;
 
@@ -48,11 +48,11 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     @Nullable
     protected SimulatorEndpoint endpoint;
     private final Map<EventType, ResettableLock<?>> eventLocks = Map.of(
-            EventType.UPGRADE, new ResettableLock<ProtocolUpgrade>(),
-            EventType.OPEN, new ResettableLock<SimulatorEndpoint>(),
-            EventType.CLOSED, new ResettableLock<CloseReason.CloseCode>(),
-            EventType.RECEIVE_MESSAGE, new ResettableLock<WebSocketMessage>(),
-            EventType.IO_ERROR, new ResettableLock<Throwable>());
+            EventType.UPGRADE, new ResettableLock<>(ProtocolUpgrade.class),
+            EventType.OPEN, new ResettableLock<>(SimulatorEndpoint.class),
+            EventType.CLOSED, new ResettableLock<>(CloseCode.class),
+            EventType.RECEIVE_MESSAGE, new ResettableLock<>(WebSocketMessage.class),
+            EventType.IO_ERROR, new ResettableLock<>(Throwable.class));
 
     protected WebSocketSimulatorBase(String threadName) {
         this.scenarioThread = new Thread(this::playScenario, threadName);
@@ -87,7 +87,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendTextMessage(String message) {
-        logger.debug("Requested to send text '{}'", message);
+        logger.debug("Request to send text '{}'", message);
         try {
             requireNonNull(endpoint).sendTextMessage(message);
             history.addEvent(Event.create(EventType.SEND_MESSAGE, message));
@@ -101,7 +101,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendBinaryMessage(ByteBuffer message) {
-        logger.debug("Requested send binary message with {} bytes", message.remaining());
+        logger.debug("Request to send binary message with {} bytes", message.remaining());
         try {
             requireNonNull(endpoint).sendBinaryMessage(message);
             history.addEvent(Event.create(EventType.SEND_MESSAGE, "Binary, len=" + message.remaining()));
@@ -188,7 +188,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 this.endpoint = waitFor(act, SimulatorEndpoint.class);
             });
             case CLOSED -> {
-                CloseReason.CloseCode code = waitFor(act, CloseReason.CloseCode.class);
+                CloseCode code = waitFor(act, CloseCode.class);
                 consumeData(act, code);
             }
             case RECEIVE_MESSAGE -> process(() -> {
@@ -200,11 +200,13 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 consumeData(act, error);
             });
             case SEND_MESSAGE -> process(() -> {
+                wait(act.delay());
                 WebSocketMessage message = provideData(act, WebSocketMessage.class);
                 sendMessage(message); // history is updated separately for text and binary
             });
             case DO_CLOSE -> process(() -> {
-                CloseReason.CloseCode code = provideData(act, CloseReason.CloseCode.class);
+                wait(act.delay());
+                CloseCode code = provideData(act, CloseCode.class);
                 Utils.requireNonNull(endpoint)
                         .closeConnection(code);
                 history.addEvent(Event.create(EventType.DO_CLOSE));
@@ -253,7 +255,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
 
     @SuppressWarnings("unchecked")
     private <T> T waitFor(Act<?> act, Class<T> klaz) {
-        logger.debug("Waiting {} for {} msec", klaz.getSimpleName(), act.delay().toMillis());
+        logger.debug("Waiting {} object for {} msec", klaz.getSimpleName(), act.delay().toMillis());
         ResettableLock<T> lock = (ResettableLock<T>)requireNonNull(eventLocks.get(act.eventType()));
         try {
             T ret = requireNonNull(lock.await(act.delay()));
@@ -267,7 +269,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
 
     @SuppressWarnings("unchecked")
     private <T> void releaseEvent(EventType eventType, T payload) {
-        logger.debug("Releasing {} of {}", payload, payload.getClass().getSimpleName());
+        logger.debug("Releasing {} object", payload.getClass().getSimpleName());
         requireNonNull((ResettableLock<T>)eventLocks.get(eventType))
                 .release(payload);
     }
@@ -297,7 +299,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     @Override
-    public void onClose(CloseReason.CloseCode closeCode) {
+    public void onClose(CloseCode closeCode) {
         releaseEvent(EventType.CLOSED, closeCode);
     }
 

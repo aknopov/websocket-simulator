@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
+import com.aknopov.wssimulator.message.WebSocketMessage;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.ValidationException;
-import com.aknopov.wssimulator.message.WebSocketMessage;
 import com.aknopov.wssimulator.simulator.WebSocketClientSimulator;
 import com.aknopov.wssimulator.simulator.WebSocketServerSimulator;
 import jakarta.websocket.CloseReason.CloseCode;
@@ -24,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimulatorsIntegrationTest {
     private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
-    private static final Duration SHORT_WAIT = ACTION_WAIT.dividedBy(20);
-    private static final Duration LONG_WAIT = ACTION_WAIT.multipliedBy(10);
+    private static final Duration SHORT_WAIT = Duration.ofMillis(50);
+    private static final Duration LONG_WAIT = Duration.ofSeconds(10);
     private static final String A_PATH = "/path";
     private static final int IDLE_SECS = 1;
     private static final int BUFFER_SIZE = 1234;
@@ -46,9 +46,9 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .wait(Duration.ZERO)
-                .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
+                .sendMessage(SERVER_RESPONSE_1, SHORT_WAIT)
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT)
-                .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
+                .perform(() -> System.out.println("** All is done **"), SHORT_WAIT);
         serverSimulator.start();
 
         String url = "ws://localhost:" + serverSimulator.getPort() + A_PATH;
@@ -57,14 +57,14 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         clientSimulator.start();
 
+        assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
-        serverSimulator.stop();
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator.hasErrors());
+        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
+        assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
     }
 
     @Test
@@ -83,11 +83,11 @@ public class SimulatorsIntegrationTest {
         clientSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateClientUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         clientSimulator.start();
 
+        assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
-        serverSimulator.stop();
 
         assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
         assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
@@ -103,28 +103,28 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
-                .closeConnection(CloseCodes.GOING_AWAY, Duration.ZERO)
+                .closeConnection(CloseCodes.GOING_AWAY, SHORT_WAIT)
                 // intermission
-                .perform(intermission::countDown, Duration.ZERO)
+                .perform(intermission::countDown, SHORT_WAIT)
                 // act 2
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_2, Duration.ZERO)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         serverSimulator.start();
 
         WebSocketClientSimulator clientSimulator1 = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
         clientSimulator1.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
-                .sendMessage(MESSAGE_1, SHORT_WAIT)
+                .sendMessage(MESSAGE_1, Duration.ZERO)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .expectConnectionClosed(this::validateGoingAway, ACTION_WAIT);
 
         WebSocketClientSimulator clientSimulator2 = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
         clientSimulator2.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
-                .sendMessage(MESSAGE_2, SHORT_WAIT)
+                .sendMessage(MESSAGE_2, Duration.ZERO)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
 
@@ -132,15 +132,17 @@ public class SimulatorsIntegrationTest {
         intermission.await(ACTION_WAIT.toSeconds(), TimeUnit.SECONDS);
         clientSimulator2.start();
 
+        assertTrue(clientSimulator2.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
         assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
         assertFalse(clientSimulator1.hasErrors(), "Client 1 errors: " + clientSimulator1.getErrors());
-        assertFalse(clientSimulator2.hasErrors(), "Client 2 errors: " + clientSimulator1.getErrors());
+        assertFalse(clientSimulator2.hasErrors(), "Client 2 errors: " + clientSimulator2.getErrors());
     }
 
     @Test
     void testScenarioInterruption() throws Exception {
+        CountDownLatch intermission = new CountDownLatch(1);
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         Scenario scenario = serverSimulator.getScenario();
         // Expect two connections
@@ -148,7 +150,8 @@ public class SimulatorsIntegrationTest {
             scenario
                     .expectConnectionOpened(ACTION_WAIT)
                     .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                    .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
+                    .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT)
+                    .perform(intermission::countDown, SHORT_WAIT);
         }
         serverSimulator.start();
 
@@ -157,17 +160,17 @@ public class SimulatorsIntegrationTest {
         clientSimulator.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         clientSimulator.start();
 
-        clientSimulator.awaitScenarioCompletion(LONG_WAIT);
+        assertTrue(intermission.await(LONG_WAIT.toMillis(), TimeUnit.MILLISECONDS));
 
         // Interrupt
         serverSimulator.stop();
-        assertTrue(serverSimulator.awaitScenarioCompletion(ACTION_WAIT));
+        assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
         List<Event> errors = serverSimulator.getErrors();
-        assertEquals(1, errors.size(), "Actual errors: " + errors);
+        assertEquals(1, errors.size(), "Server errors: " + serverSimulator.getErrors());
         assertTrue(errors.get(0).description().startsWith("Scenario run has been interrupted:"));
     }
 
@@ -212,7 +215,7 @@ public class SimulatorsIntegrationTest {
         protocolUpgrade.respHeaders().put("WWW-Authenticate", List.of("Bearer realm=\"Protected Area\""));
     }
 
-    // Client side validator has only headers
+    // Client side validator has only headers - checking some of them
     private void validateClientUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
         Map<String, List<String>> allRequestHeaders = protocolUpgrade.reqHeaders();
         Map<String, List<String>> allResponseHeaders = protocolUpgrade.respHeaders();

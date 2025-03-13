@@ -88,7 +88,7 @@ public class WebSocketClient {
             return true;
         }
         catch (DeploymentException | IOException e) {
-            logger.error("Can't connect to the server at {}", url, e);
+            logger.error("Can't connect to the server at {} - {}", url, e.getMessage());
             return false;
         }
     }

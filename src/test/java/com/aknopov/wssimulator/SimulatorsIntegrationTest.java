@@ -8,10 +8,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.aknopov.wssimulator.message.WebSocketMessage;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.ValidationException;
-import com.aknopov.wssimulator.message.WebSocketMessage;
 import com.aknopov.wssimulator.simulator.WebSocketClientSimulator;
 import com.aknopov.wssimulator.simulator.WebSocketServerSimulator;
 import jakarta.websocket.CloseReason.CloseCode;
@@ -23,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimulatorsIntegrationTest {
+    private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class); //UC
+
     private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
     private static final Duration SHORT_WAIT = ACTION_WAIT.dividedBy(20);
     private static final Duration LONG_WAIT = ACTION_WAIT.multipliedBy(10);
@@ -60,10 +64,11 @@ public class SimulatorsIntegrationTest {
                 .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         clientSimulator.start();
 
+        assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
-        serverSimulator.stop();
+//UC        serverSimulator.stop(); //UC???
 
-        assertFalse(serverSimulator.hasErrors());
+        assertFalse(serverSimulator.hasErrors()); //UC
         assertFalse(clientSimulator.hasErrors());
     }
 
@@ -86,10 +91,11 @@ public class SimulatorsIntegrationTest {
                 .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         clientSimulator.start();
 
+        assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
-        serverSimulator.stop();
+//UC        serverSimulator.stop();
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
+        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors()); //UC
         assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
     }
 
@@ -132,6 +138,7 @@ public class SimulatorsIntegrationTest {
         intermission.await(ACTION_WAIT.toSeconds(), TimeUnit.SECONDS);
         clientSimulator2.start();
 
+        assertTrue(clientSimulator2.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
         assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
@@ -140,7 +147,7 @@ public class SimulatorsIntegrationTest {
     }
 
     @Test
-    void testScenarioInterruption() throws Exception {
+    void testScenarioInterruption() {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         Scenario scenario = serverSimulator.getScenario();
         // Expect two connections
@@ -167,6 +174,7 @@ public class SimulatorsIntegrationTest {
         assertTrue(serverSimulator.awaitScenarioCompletion(ACTION_WAIT));
 
         List<Event> errors = serverSimulator.getErrors();
+        logger.info("** testScenarioInterruption Errors: {}", errors);//UC
         assertEquals(1, errors.size(), "Actual errors: " + errors);
         assertTrue(errors.get(0).description().startsWith("Scenario run has been interrupted:"));
     }
@@ -212,7 +220,7 @@ public class SimulatorsIntegrationTest {
         protocolUpgrade.respHeaders().put("WWW-Authenticate", List.of("Bearer realm=\"Protected Area\""));
     }
 
-    // Client side validator has only headers
+    // Client side validator has only headers, checking some of them
     private void validateClientUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
         Map<String, List<String>> allRequestHeaders = protocolUpgrade.reqHeaders();
         Map<String, List<String>> allResponseHeaders = protocolUpgrade.respHeaders();

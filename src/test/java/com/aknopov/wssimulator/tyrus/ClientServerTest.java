@@ -23,16 +23,13 @@ import static org.mockito.Mockito.verify;
 
 public class ClientServerTest extends BaseTest {
     private static final Logger logger = LoggerFactory.getLogger(ClientServerTest.class);
+    private static final Duration WAIT_DURATION = Duration.ofSeconds(1);
 
     @Test
     void TestCommunication() throws Exception {
         WebSocketServer server = new WebSocketServer("localhost", "/", Map.of());
         server.start();
-        server.waitForStart(Duration.ofSeconds(1));
-
-        logger.info("-------------------------------");
-        logger.info("Server is running on port {}", server.getPort());
-        logger.info("-------------------------------");
+        server.waitForStart(WAIT_DURATION);
 
         EventListener clientListener = mock(EventListener.class);
         WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()), clientListener);
@@ -42,7 +39,7 @@ public class ClientServerTest extends BaseTest {
         client.stop();
 
         // Drain events
-        Thread.sleep(100);
+        Thread.sleep(100); //UC
         server.stop();
 
         ArgumentCaptor<ProtocolUpgrade> handshakeCaptor = ArgumentCaptor.forClass(ProtocolUpgrade.class);
@@ -60,7 +57,7 @@ public class ClientServerTest extends BaseTest {
     void testWrongPath() throws Exception {
         WebSocketServer server = new WebSocketServer("localhost", "/", Map.of());
         server.start();
-        server.waitForStart(Duration.ofSeconds(1));
+        server.waitForStart(WAIT_DURATION);
 
         WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/another_path", server.getPort()),
                 mock(EventListener.class));

@@ -1,20 +1,24 @@
 package com.aknopov.wssimulator.injection;
 
+import java.time.Duration;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.aknopov.wssimulator.tyrus.BaseTest;
 import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.SessionConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
-class ServiceLocatorTest extends BaseTest {
+class ServiceLocatorTest {
+    protected static final String A_PATH = "/path";
+    protected static final int IDLE_SECS = 1;
+    protected static final int BUFFER_SIZE = 1234;
 
     interface TestInterface {
     }
@@ -36,6 +40,14 @@ class ServiceLocatorTest extends BaseTest {
     }
 
     private record TestRecord(String content) implements TestInterface {
+    }
+
+    protected static final EventListener mockListener = mock(EventListener.class);
+    protected static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
+
+    @BeforeEach
+    protected void initInjection() {
+        ServiceLocator.init(config, mockListener);
     }
 
     @Test

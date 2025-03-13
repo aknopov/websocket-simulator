@@ -73,9 +73,29 @@ public class BaseTest {
             binaryEvent.countDown();
         }
 
+        boolean waitForHandshake(Duration waitTime) {
+            return waitForEvent(handshakeEvent, waitTime);
+        }
+
+        boolean waitForOpen(Duration waitTime) {
+            return waitForEvent(openEvent, waitTime);
+        }
+
         boolean waitForClose(Duration waitTime) {
+            return waitForEvent(closeEvent, waitTime);
+        }
+
+        boolean waitForBinary(Duration waitTime) {
+            return waitForEvent(binaryEvent, waitTime);
+        }
+
+        boolean waitForText(Duration waitTime) {
+            return waitForEvent(textEvent, waitTime);
+        }
+
+        private boolean waitForEvent(CountDownLatch event, Duration waitTime) {
             try {
-                return closeEvent.await(waitTime.toMillis(), TimeUnit.MILLISECONDS);
+                return event.await(waitTime.toMillis(), TimeUnit.MILLISECONDS);
             }
             catch (InterruptedException e) {
                 return false;

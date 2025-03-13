@@ -4,8 +4,6 @@ import java.time.Duration;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
 
@@ -14,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class ClientServerTest extends BaseTest {
-    private static final Logger logger = LoggerFactory.getLogger(ClientServerTest.class);
     private static final Duration WAIT_DURATION = Duration.ofMillis(200);
 
     @Test
@@ -28,6 +25,7 @@ public class ClientServerTest extends BaseTest {
         client.start();
         client.sendTextMessage(TEXT_MESSAGE);
         client.sendBinaryMessage(BINARY_MESSAGE);
+        assertTrue(serverListener.waitForBinary(WAIT_DURATION));
         client.stop();
 
         // Drain events

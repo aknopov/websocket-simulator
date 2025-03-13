@@ -3,21 +3,31 @@ package com.aknopov.wssimulator.scenario;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
+import org.mockito.Mockito;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.Scenario;
+import com.aknopov.wssimulator.ScenarioInterruptedException;
 import com.aknopov.wssimulator.message.WebSocketMessage;
+import com.aknopov.wssimulator.tyrus.WebSocketClient;
 import jakarta.websocket.CloseReason;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.when;
 
 class ScenarioImplTest {
 
@@ -120,5 +130,16 @@ class ScenarioImplTest {
         assertFalse(scenario.isDone());
         scenario.awaitCompletion(WAIT_DURATION);
         assertTrue(scenario.isDone());
+    }
+
+    @Test
+    void testThreadInterruptions() {
+        try (MockedConstruction<CountDownLatch> latchClass = mockConstruction(CountDownLatch.class,
+                (m, c) -> when(m.await(anyLong(), any(TimeUnit.class))).thenThrow(InterruptedException.class))) {
+            Scenario interruptedScenario = new ScenarioImpl();
+
+            assertThrows(ScenarioInterruptedException.class, () -> interruptedScenario.awaitStart(WAIT_DURATION));
+            assertThrows(ScenarioInterruptedException.class, () -> interruptedScenario.awaitCompletion(WAIT_DURATION));
+        }
     }
 }

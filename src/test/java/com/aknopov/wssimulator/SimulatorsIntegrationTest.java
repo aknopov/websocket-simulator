@@ -8,8 +8,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
-//UC import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.message.WebSocketMessage;
 import com.aknopov.wssimulator.scenario.Event;
@@ -25,8 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimulatorsIntegrationTest {
-//    private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class); //UC
-
     private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
     private static final Duration SHORT_WAIT = Duration.ofMillis(50);
     private static final Duration LONG_WAIT = Duration.ofSeconds(10);
@@ -106,7 +102,7 @@ public class SimulatorsIntegrationTest {
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                .sendMessage(SERVER_RESPONSE_1, SHORT_WAIT)
+                .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
                 .closeConnection(CloseCodes.GOING_AWAY, SHORT_WAIT)
                 // intermission
                 .perform(intermission::countDown, SHORT_WAIT)
@@ -114,21 +110,21 @@ public class SimulatorsIntegrationTest {
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                .sendMessage(SERVER_RESPONSE_2, SHORT_WAIT)
+                .sendMessage(SERVER_RESPONSE_2, Duration.ZERO)
                 .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         serverSimulator.start();
 
         WebSocketClientSimulator clientSimulator1 = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
         clientSimulator1.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
-                .sendMessage(MESSAGE_1, SHORT_WAIT)
+                .sendMessage(MESSAGE_1, Duration.ZERO)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .expectConnectionClosed(this::validateGoingAway, ACTION_WAIT);
 
         WebSocketClientSimulator clientSimulator2 = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
         clientSimulator2.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
-                .sendMessage(MESSAGE_2, SHORT_WAIT)
+                .sendMessage(MESSAGE_2, Duration.ZERO)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
 
@@ -139,9 +135,9 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator2.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
-        assertFalse(clientSimulator1.hasErrors(), "Client 1 errors: " + clientSimulator1.getErrors());
-        assertFalse(clientSimulator2.hasErrors(), "Client 2 errors: " + clientSimulator1.getErrors());
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator1.hasErrors());
+        assertFalse(clientSimulator2.hasErrors());
     }
 
     @Test
@@ -174,7 +170,6 @@ public class SimulatorsIntegrationTest {
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
         List<Event> errors = serverSimulator.getErrors();
-//        logger.info("** testScenarioInterruption Errors: {}", errors);//UC
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).description().startsWith("Scenario run has been interrupted:"));
     }

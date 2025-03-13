@@ -87,7 +87,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendTextMessage(String message) {
-        logger.debug("Requested to send text '{}'", message);
+        logger.debug("Request to send text '{}'", message);
         try {
             requireNonNull(endpoint).sendTextMessage(message);
             history.addEvent(Event.create(EventType.SEND_MESSAGE, message));
@@ -101,7 +101,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendBinaryMessage(ByteBuffer message) {
-        logger.debug("Requested send binary message with {} bytes", message.remaining());
+        logger.debug("Request to send binary message with {} bytes", message.remaining());
         try {
             requireNonNull(endpoint).sendBinaryMessage(message);
             history.addEvent(Event.create(EventType.SEND_MESSAGE, "Binary, len=" + message.remaining()));
@@ -139,10 +139,8 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     @Override
     @SuppressWarnings("Interruption")
     public void stop() {
-//        logger.debug("Requesting scenario stop"); //UC
         scenario.requestStop();
         if (scenarioThread.isAlive()) {
-//            logger.debug("Interrupting scenario thread {}", scenarioThread.getName()); //UC
             scenarioThread.interrupt();
         }
         history.addEvent(Event.create(EventType.STOPPED));
@@ -176,7 +174,6 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             recordError("Scenario run has been interrupted: " + ex.stringify());
         }
         finally {
-//            logger.debug("Marking scenario completion"); //UC
             scenario.markCompletion();
         }
     }
@@ -252,7 +249,6 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             Thread.sleep(waitDuration.toMillis());
         }
         catch (InterruptedException e) {
-//            logger.debug("Wait interrupted");//UC
             throw new ScenarioInterruptedException(e);
         }
     }
@@ -267,7 +263,6 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             return ret;
         }
         catch (InterruptedException e) {
-//            logger.debug("Wait for {} interrupted", klaz.getSimpleName());//UC
             throw new ScenarioInterruptedException(e);
         }
     }

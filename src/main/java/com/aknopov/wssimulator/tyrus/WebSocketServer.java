@@ -70,7 +70,6 @@ public class WebSocketServer {
     public synchronized void stop() {
         if (stopLatch.getCount() == 1) {
             logger.debug("Stopping WS server on port {}", port);
-//UC            server.stop();
             stopLatch.countDown();
         }
     }

@@ -22,7 +22,7 @@ class ResettableLockTest {
 
     @Test
     void testReusability() throws Exception {
-        ResettableLock<Boolean> rl = new ResettableLock<>();
+        ResettableLock<Boolean> rl = new ResettableLock<>(Boolean.class);
 
         for (int i = 0; i < USES_COUNT; i++) {
             new Thread(() -> {
@@ -45,7 +45,7 @@ class ResettableLockTest {
     @Test
     void testSimultaneousRelease() throws Exception {
 
-        ResettableLock<Boolean> rl = new ResettableLock<>();
+        ResettableLock<Boolean> rl = new ResettableLock<>(Boolean.class);
 
         for (int i = 0; i < USES_COUNT; i++) {
             new Thread(() -> {
@@ -67,7 +67,7 @@ class ResettableLockTest {
 
     @Test
     void testWaitInterval() {
-        ResettableLock<Boolean> rl = new ResettableLock<>();
+        ResettableLock<Boolean> rl = new ResettableLock<>(Boolean.class);
         Instant start = Instant.now();
 
         assertThrows(TimeoutException.class, () -> rl.await(Duration.ofMillis(WAIT_TIME_MSEC)));

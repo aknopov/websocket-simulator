@@ -162,7 +162,7 @@ class WebSocketSimulatorBaseTest {
 
         List<Event> errors = simulator.getErrors();
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).description().startsWith("Data wasn't released in 200 msec"));
+        assertTrue(errors.get(0).description().startsWith("SimulatorEndpoint wasn't released in 200 msec"));
     }
 
     @Test

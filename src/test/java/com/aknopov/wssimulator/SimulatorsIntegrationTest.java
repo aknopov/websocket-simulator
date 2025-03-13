@@ -74,7 +74,7 @@ public class SimulatorsIntegrationTest {
                 .expectProtocolUpgrade(this::validateUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT)
-                .perform(() -> System.out.println("** All is done **"), SHORT_WAIT);
+                .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
         serverSimulator.start();
 
         String url = "ws://localhost:" + serverSimulator.getPort() + A_PATH;

@@ -10,6 +10,11 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ResettableLock<T> {
     private final AtomicReference<T> refPayload = new AtomicReference<>();
+    private final Class<T> dataClass;
+
+    public ResettableLock(Class<T> dataClass) {
+        this.dataClass = dataClass;
+    }
 
     /**
      * Causes the current thread to wait until it is awakened.
@@ -27,7 +32,7 @@ public class ResettableLock<T> {
         }
         T retVal = refPayload.get();
         if (retVal == null) {
-            throw new TimeoutException("Data wasn't released in " + waitDuration.toMillis() + " msec");
+            throw new TimeoutException(dataClass.getSimpleName() + " wasn't released in " + waitDuration.toMillis() + " msec");
         }
         return retVal;
     }

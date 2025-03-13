@@ -32,7 +32,7 @@ import com.aknopov.wssimulator.scenario.ValidationException;
 import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
 import com.aknopov.wssimulator.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.message.WebSocketMessage;
-import jakarta.websocket.CloseReason;
+import jakarta.websocket.CloseReason.CloseCode;
 
 import static com.aknopov.wssimulator.Utils.requireNonNull;
 
@@ -48,11 +48,11 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     @Nullable
     protected SimulatorEndpoint endpoint;
     private final Map<EventType, ResettableLock<?>> eventLocks = Map.of(
-            EventType.UPGRADE, new ResettableLock<ProtocolUpgrade>(),
-            EventType.OPEN, new ResettableLock<SimulatorEndpoint>(),
-            EventType.CLOSED, new ResettableLock<CloseReason.CloseCode>(),
-            EventType.RECEIVE_MESSAGE, new ResettableLock<WebSocketMessage>(),
-            EventType.IO_ERROR, new ResettableLock<Throwable>());
+            EventType.UPGRADE, new ResettableLock<>(ProtocolUpgrade.class),
+            EventType.OPEN, new ResettableLock<>(SimulatorEndpoint.class),
+            EventType.CLOSED, new ResettableLock<>(CloseCode.class),
+            EventType.RECEIVE_MESSAGE, new ResettableLock<>(WebSocketMessage.class),
+            EventType.IO_ERROR, new ResettableLock<>(Throwable.class));
 
     protected WebSocketSimulatorBase(String threadName) {
         this.scenarioThread = new Thread(this::playScenario, threadName);
@@ -188,7 +188,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 this.endpoint = waitFor(act, SimulatorEndpoint.class);
             });
             case CLOSED -> {
-                CloseReason.CloseCode code = waitFor(act, CloseReason.CloseCode.class);
+                CloseCode code = waitFor(act, CloseCode.class);
                 consumeData(act, code);
             }
             case RECEIVE_MESSAGE -> process(() -> {
@@ -206,7 +206,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             });
             case DO_CLOSE -> process(() -> {
                 wait(act.delay());
-                CloseReason.CloseCode code = provideData(act, CloseReason.CloseCode.class);
+                CloseCode code = provideData(act, CloseCode.class);
                 Utils.requireNonNull(endpoint)
                         .closeConnection(code);
                 history.addEvent(Event.create(EventType.DO_CLOSE));
@@ -299,7 +299,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     @Override
-    public void onClose(CloseReason.CloseCode closeCode) {
+    public void onClose(CloseCode closeCode) {
         releaseEvent(EventType.CLOSED, closeCode);
     }
 

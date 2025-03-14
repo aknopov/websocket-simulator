@@ -74,8 +74,8 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
         session.addMessageHandler(new TextMessageHandler(this::onTextMessage));
         session.addMessageHandler(new BinaryMessageHandler(this::onBinaryMessage));
 
-        session.setMaxBinaryMessageBufferSize(sessionConfig.bufferSize());
-        session.setMaxIdleTimeout(sessionConfig.idleTimeout().toMillis());
+        session.setMaxIdleTimeout(sessionConfig.idleTimeout().toMillis()); // necessary
+        session.setMaxBinaryMessageBufferSize(sessionConfig.bufferSize()); // not necessary
 
         // session.getUserProperties().put("started", true); // an example of storing state
 
@@ -84,7 +84,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
 
     @Override
     public void onClose(Session session, CloseReason closeReason) {
-        logger.debug("Connection closed because of {}", closeReason.getCloseCode());
+        logger.debug("Connection closed with {}: {}", closeReason.getCloseCode(), closeReason.getReasonPhrase());
         eventListener.onClose(closeReason.getCloseCode());
         this.session = null;
     }
@@ -161,7 +161,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
 
         @Override
         public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> set) {
-            return Set.of(ServerEndpointConfig.Builder.create(WebSocketEndpoint.class, sessionConfig.path())
+            return Set.of(ServerEndpointConfig.Builder.create(WebSocketEndpoint.class, sessionConfig.contextPath())
                             .configurator(new ServerEndpointConfigurator(eventListener))
                     .build());
         }

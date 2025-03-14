@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 class WebSocketServerSimulatorTest {
     private static final String A_PATH = "/path";
-    private static final int IDLE_SECS = 1;
+    private static final int IDLE_SECS = 5;
     private static final int BUFFER_SIZE = 1234;
     private static final int PORT = 5005;
 

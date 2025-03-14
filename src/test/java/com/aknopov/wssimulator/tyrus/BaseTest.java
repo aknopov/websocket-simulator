@@ -20,7 +20,7 @@ import static org.mockito.Mockito.mock;
 
 public class BaseTest {
     protected static final String A_PATH = "/path";
-    protected static final int IDLE_SECS = 1;
+    protected static final int IDLE_SECS = 5;
     protected static final int BUFFER_SIZE = 1234;
     protected static final String TEXT_MESSAGE = "Hello!";
     protected static final ByteBuffer BINARY_MESSAGE =

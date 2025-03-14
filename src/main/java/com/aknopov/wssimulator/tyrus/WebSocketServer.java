@@ -28,13 +28,13 @@ public class WebSocketServer {
      * Creates server instant.
      *
      * @param host host name
-     * @param contextPath root context path
+     * @param path root path
      * @param properties Tyrus server configuration properties
      * @param port port to run on
      */
-    public WebSocketServer(String host, String contextPath, Map<String, Object> properties, int port) {
+    public WebSocketServer(String host, String path, Map<String, Object> properties, int port) {
         this.port = port;
-        this.server = new Server(host, port, contextPath, properties, WebSocketEndpoint.getConfigClass());
+        this.server = new Server(host, port, path, properties, WebSocketEndpoint.getConfigClass());
         this.stopLatch = new CountDownLatch(1);
         this.startLatch = new CountDownLatch(1);
         logger.debug("Created WS server on port {}", port);
@@ -44,11 +44,11 @@ public class WebSocketServer {
      * Creates server instant that will be run on some available port (see <a href="com.aknopov.wssimulator.tyrus.WebSocketServer#getPort()">getPort</a>).
      *
      * @param host host name
-     * @param contextPath root context path
+     * @param path root path
      * @param properties Tyrus server configuration properties
      */
-    public WebSocketServer(String host, String contextPath, Map<String, Object> properties) {
-        this(host, contextPath, properties, getAvailablePort());
+    public WebSocketServer(String host, String path, Map<String, Object> properties) {
+        this(host, path, properties, getAvailablePort());
     }
 
     /**

@@ -7,13 +7,17 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.message.WebSocketMessage;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.ValidationException;
 import com.aknopov.wssimulator.simulator.WebSocketClientSimulator;
 import com.aknopov.wssimulator.simulator.WebSocketServerSimulator;
+import com.aknopov.wssimulator.simulator.WebSocketSimulatorBase;
 import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.CloseReason.CloseCodes;
 
@@ -23,20 +27,27 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimulatorsIntegrationTest {
+    private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class);
+
     private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
     private static final Duration SHORT_WAIT = Duration.ofMillis(50);
     private static final Duration LONG_WAIT = Duration.ofSeconds(10);
     private static final String A_PATH = "/path";
-    private static final int IDLE_SECS = 1;
-    private static final int BUFFER_SIZE = 1234;
     private static final String MESSAGE_1 = "Message 1";
     private static final String MESSAGE_2 = "Message 2";
     private static final String SERVER_RESPONSE_1 = "Coffee break";
     private static final String SERVER_RESPONSE_2 = "All is good";
     private static final int UNAUTHORIZED_CODE = 401;
 
-    private static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
+    private static final SessionConfig config = new SessionConfig(A_PATH);
     private static final String AUTH_HEADER = "Authorization";
+
+    @BeforeAll
+    static void logConfig() {
+        logger.debug("-------------------------");
+        logger.debug("Test configuration: {}", config);
+        logger.debug("-------------------------");
+    }
 
     @Test
     void testRunningSimulator() {

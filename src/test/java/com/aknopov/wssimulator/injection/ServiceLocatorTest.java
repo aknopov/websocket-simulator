@@ -61,7 +61,7 @@ class ServiceLocatorTest {
     void testSessionConfig() {
         SessionConfig config = ServiceLocator.findOrCreate(SessionConfig.class);
 
-        assertEquals(A_PATH, config.path());
+        assertEquals(A_PATH, config.contextPath());
         assertEquals(IDLE_SECS, config.idleTimeout().toSeconds());
         assertEquals(BUFFER_SIZE, config.bufferSize());
     }

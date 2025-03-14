@@ -17,7 +17,6 @@ import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.ValidationException;
 import com.aknopov.wssimulator.simulator.WebSocketClientSimulator;
 import com.aknopov.wssimulator.simulator.WebSocketServerSimulator;
-import com.aknopov.wssimulator.simulator.WebSocketSimulatorBase;
 import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.CloseReason.CloseCodes;
 
@@ -153,16 +152,14 @@ public class SimulatorsIntegrationTest {
 
     @Test
     void testScenarioInterruption() throws Exception {
-        CountDownLatch intermission = new CountDownLatch(1);
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
-        Scenario scenario = serverSimulator.getScenario();
+        Scenario serverScenario = serverSimulator.getScenario();
         // Expect two connections
         for (int i = 0; i < 2; i++) {
-            scenario
+            serverScenario
                     .expectConnectionOpened(ACTION_WAIT)
                     .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                    .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT)
-                    .perform(intermission::countDown, SHORT_WAIT);
+                    .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
         }
         serverSimulator.start();
 
@@ -171,10 +168,11 @@ public class SimulatorsIntegrationTest {
         clientSimulator.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT)
+                .wait(SHORT_WAIT);
         clientSimulator.start();
 
-        assertTrue(intermission.await(LONG_WAIT.toMillis(), TimeUnit.MILLISECONDS));
+        assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
 
         // Interrupt
         serverSimulator.stop();

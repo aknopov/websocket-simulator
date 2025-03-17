@@ -30,7 +30,7 @@ public class SocketFactory {
     }
 
 
-    public Socket creatUpsteamSocket(int port) throws IOException {
+    public Socket creatUpstreamSocket(int port) throws IOException {
         return new Socket("localhost", port);
     }
 }

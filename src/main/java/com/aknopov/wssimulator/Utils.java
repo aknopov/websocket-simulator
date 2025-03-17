@@ -1,5 +1,7 @@
 package com.aknopov.wssimulator;
 
+import java.time.Duration;
+
 import javax.annotation.Nullable;
 
 /**
@@ -10,12 +12,26 @@ public final class Utils {
     }
 
     /**
-     * Checks if boolean value is {@code true}
-     * @param expression thrown if expression evaluates to {@code false}
+     * Checks an expectation throwing {@link IllegalArgumentException} if check fails.
+     * 
+     * @param check check value
+     * @param errMessage message in the exception
      */
-    public static void checkArgument(boolean expression) {
-        if (!expression) {
-            throw new IllegalStateException();
+    public static void checkArgument(boolean check, String errMessage) {
+        if (!check) {
+            throw new IllegalArgumentException(errMessage);
+        }
+    }
+
+    /**
+     * Checks an expectation throwing {@link IllegalStateException} if check fails.
+     *
+     * @param check check value
+     * @param errMessage message in the exception
+     */
+    public static void checkState(boolean check, String errMessage) {
+        if (!check) {
+            throw new IllegalStateException(errMessage);
         }
     }
 
@@ -50,5 +66,28 @@ public final class Utils {
             throw new IllegalStateException(message);
         }
         return obj;
+    }
+
+    /**
+     * Sleeps specified time and ignores {@link InterruptedException}
+     *
+     * @param sleepMs sleep duration in milliseconds
+     */
+    public static void sleepUnchecked(long sleepMs) {
+        try {
+            Thread.sleep(sleepMs);
+        }
+        catch (InterruptedException e) {
+            // ignore
+        }
+    }
+
+    /**
+     * Sleeps specified time and ignores {@link InterruptedException}
+     *
+     * @param sleepTime sleep duration
+     */
+    public static void sleepUnchecked(Duration sleepTime) {
+        sleepUnchecked(sleepTime.toMillis());
     }
 }

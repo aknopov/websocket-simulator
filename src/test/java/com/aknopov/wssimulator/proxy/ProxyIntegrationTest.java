@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.SocketFactory;
 import com.aknopov.wssimulator.message.WebSocketMessage;
+import com.aknopov.wssimulator.proxy.toxy.ToxicNoop;
 import com.aknopov.wssimulator.simulator.WebSocketClientSimulator;
 import com.aknopov.wssimulator.simulator.WebSocketServerSimulator;
 import jakarta.websocket.CloseReason;
@@ -29,7 +30,7 @@ public class ProxyIntegrationTest {
     private static final ProxyConfig PROXY_CONFIG = new ProxyConfig(19266, 21601, 60_000, 1024, ACTION_WAIT);
 
     @Test
-    void testProxying() {
+    void testProxyingWithoutToxy() {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SERVER_CONFIG, PROXY_CONFIG.upPort());
         serverSimulator.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
@@ -45,7 +46,7 @@ public class ProxyIntegrationTest {
                 .expectMessage(this::onTextMessage, ACTION_WAIT)
                 .closeConnection(CloseReason.CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
 
-        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, new SocketFactory());
+        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, new SocketFactory(), new ToxicNoop());
 
         proxy.start();
         serverSimulator.start();

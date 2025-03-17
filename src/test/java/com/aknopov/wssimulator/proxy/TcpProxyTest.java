@@ -6,31 +6,41 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import com.aknopov.wssimulator.SocketFactory;
+import com.aknopov.wssimulator.Utils;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.answersWithDelay;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class TcpProxyTest {
     private static final Class<byte[]> BYTE_ARRAY_TYPE = byte[].class;
     private static final Duration TEST_DURATION = Duration.ofMillis(300);
+    private static final Duration SLEEP_TIME = TEST_DURATION.dividedBy(10);
     private static final Duration ACCEPT_PAUSE = TEST_DURATION.dividedBy(3);
     private static final InetSocketAddress DOWN_ADDRESS = new InetSocketAddress("localhost", 1234);
     private static final InetSocketAddress UP_ADDRESS = new InetSocketAddress("localhost", 4321);
@@ -49,7 +59,7 @@ class TcpProxyTest {
     @BeforeEach
     void setUp() throws IOException {
         when(mockFactory.createServerSocket(anyInt())).thenReturn(mockServerSocket);
-        when(mockFactory.creatUpsteamSocket(anyInt())).thenReturn(mockSocketUp);
+        when(mockFactory.creatUpstreamSocket(anyInt())).thenReturn(mockSocketUp);
         when(mockServerSocket.accept()).thenAnswer(answersWithDelay(ACCEPT_PAUSE.toMillis(), i -> mockSocketDown));
 
         when(mockSocketUp.getInputStream()).thenReturn(mockInStreamUp);
@@ -88,7 +98,7 @@ class TcpProxyTest {
 
         verify(mockFactory).createServerSocket(DOWN_ADDRESS.getPort());
         verify(mockServerSocket, atLeast(1)).accept();
-        verify(mockFactory, atLeast(1)).creatUpsteamSocket(UP_ADDRESS.getPort());
+        verify(mockFactory, atLeast(1)).creatUpstreamSocket(UP_ADDRESS.getPort());
 
         verify(mockSocketDown, atLeast(1)).getInputStream();
         verify(mockSocketDown, atLeast(1)).getOutputStream();
@@ -142,5 +152,69 @@ class TcpProxyTest {
         proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
         assertDoesNotThrow(proxy::start);
         proxy.awaitTermination(TEST_DURATION);
+    }
+
+    @Test
+    void testDoubleStop() {
+        try (MockedStatic<NamedThreadPool> mockeThreadPool = mockStatic(NamedThreadPool.class)) {
+            ExecutorService mockExecutor = mock(ExecutorService.class);
+            mockeThreadPool.when(() -> NamedThreadPool.createFixedPool(anyInt(), anyString())).thenReturn(mockExecutor);
+
+            TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+            proxy.start();
+            Utils.sleepUnchecked(SLEEP_TIME);
+            proxy.stop();
+
+            verify(mockExecutor, times(2)).submit(any(Runnable.class));
+            verify(mockExecutor).shutdownNow();
+
+            // Repeated stop doesn't have effect
+            proxy.stop();
+            verifyNoMoreInteractions(mockExecutor);
+        }
+    }
+
+    @Test
+    void testNoInterruptionsOnStop() {
+        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        proxy.start();
+        Utils.sleepUnchecked(SLEEP_TIME);
+        proxy.stop();
+
+    }
+
+    @Test
+    void testAwaitTerminationOnTimeout() {
+        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        proxy.start();
+
+        assertFalse(proxy.awaitTermination(TEST_DURATION.dividedBy(5)));
+        assertTrue(proxy.awaitTermination(TEST_DURATION));
+    }
+
+    @Test
+    void testAwaitTerminationOnInterrupt() {
+        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        proxy.start();
+
+        Thread testThread = Thread.currentThread();
+        ScheduledThreadPoolExecutor shutdownExecutor = new ScheduledThreadPoolExecutor(1);
+        shutdownExecutor.schedule(testThread::interrupt, SLEEP_TIME.toMillis(), TimeUnit.MILLISECONDS);
+
+        assertFalse(proxy.awaitTermination(SLEEP_TIME.multipliedBy(2)));
+    }
+
+    @Test
+    void testIOErrors() throws IOException {
+        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+
+        doThrow(SocketException.class).when(mockFactory).creatUpstreamSocket(anyInt());
+        assertDoesNotThrow(() -> proxy.proxyCommunications(mockSocketDown));
+
+        doThrow(IOException.class).when(mockFactory).creatUpstreamSocket(anyInt());
+        assertDoesNotThrow(() -> proxy.proxyCommunications(mockSocketDown));
+
+        doThrow(IOException.class).when(mockFactory).createServerSocket(anyInt());
+        assertDoesNotThrow(proxy::waitForIncomingConnections);
     }
 }

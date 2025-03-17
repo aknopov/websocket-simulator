@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -17,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.SocketFactory;
+import com.aknopov.wssimulator.proxy.toxy.Toxic;
+import com.aknopov.wssimulator.proxy.toxy.ToxicNoop;
 
 /**
  * TCP proxy implementation for "localhost"
@@ -27,18 +30,26 @@ public class TcpProxy {
     private final ProxyConfig proxyConfig;
     private final SocketFactory socketFactory;
     private final ExecutorService executor;
+    private final Toxic toxic;
     private final CountDownLatch stopped = new CountDownLatch(1);
+
+    TcpProxy(ProxyConfig proxyConfig, SocketFactory socketFactory) {
+        this(proxyConfig, socketFactory, new ToxicNoop());
+    }
 
     /**
      * Creates proxy with configuration and socket factory
      *
      * @param proxyConfig proxy config
      * @param socketFactory socket factory
+     * @param toxic toxy of choice
      */
-    public TcpProxy(ProxyConfig proxyConfig, SocketFactory socketFactory) {
+    public TcpProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, Toxic toxic) {
         this.proxyConfig = proxyConfig;
         this.socketFactory = socketFactory;
+        this.toxic = toxic;
         this.executor = NamedThreadPool.createFixedPool(3, "TcpProxy");
+
     }
 
     /**
@@ -87,7 +98,8 @@ public class TcpProxy {
         }
     }
 
-    private void waitForIncomingConnections() {
+    //VisibleForTesting
+    void waitForIncomingConnections() {
         try (ServerSocket serverSocket = socketFactory.createServerSocket(proxyConfig.downPort())) {
             logger.debug("Started proxy server on port {}", proxyConfig.downPort());
             while (stopped.getCount() > 0) {
@@ -102,9 +114,10 @@ public class TcpProxy {
         }
     }
 
-    private void proxyCommunications(Socket downstreamSocket) {
+    //VisibleForTesting
+    void proxyCommunications(Socket downstreamSocket) {
         logger.debug("Connection accepted");
-        try (Socket upstreamSocket = socketFactory.creatUpsteamSocket(proxyConfig.upPort())) {
+        try (Socket upstreamSocket = socketFactory.creatUpstreamSocket(proxyConfig.upPort())) {
             logger.debug("Created proxy client on port {}", proxyConfig.upPort());
 
             try (InputStream downInStream = downstreamSocket.getInputStream();
@@ -112,6 +125,7 @@ public class TcpProxy {
                  OutputStream upOutStream = upstreamSocket.getOutputStream();
                  InputStream upInStream = upstreamSocket.getInputStream()
             ) {
+                toxic.start();
                 Future<?> upTask = executor.submit(() -> hookupStreams(upInStream, downOutStream, "upstream"));
                 hookupStreams(downInStream, upOutStream, "downstream");
                 var unused = upTask.get();
@@ -126,6 +140,9 @@ public class TcpProxy {
         catch (IOException ex) {
             logger.error("Failed to accept connection", ex);
         }
+        finally {
+            toxic.stop();
+        }
     }
 
     private void hookupStreams(InputStream inputStream, OutputStream outputStream, String logHint) {
@@ -134,7 +151,8 @@ public class TcpProxy {
         int len;
         try {
             while (stopped.getCount() > 0 && (len = inputStream.read(buffer)) > 0) {
-                outputStream.write(buffer, 0, len);
+                ByteBuffer toxicBuffer = toxic.transform(ByteBuffer.wrap(buffer, 0, len));
+                outputStream.write(toxicBuffer.array(), 0, toxicBuffer.remaining());
             }
         }
         catch (IOException ex) {

@@ -13,22 +13,22 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 class ToxicTimeoutTest extends ToxicTestBase {
 
-    private Runnable mockRunner = mock(Runnable.class);
+    private Interruptible mockInterruptible = mock(Interruptible.class);
 
     @Test
     void testStopper() {
-        ToxicTimeout toxic = new ToxicTimeout(START_DELAY, mockRunner);
+        ToxicTimeout toxic = new ToxicTimeout(START_DELAY, mockInterruptible);
 
         toxic.start();
 
         Utils.sleepUnchecked(TIME_PRECISION);
         ByteBuffer outData = toxic.transform(IN_DATA);
-        verifyNoInteractions(mockRunner);
+        verifyNoInteractions(mockInterruptible);
         assertEquals(IN_DATA, outData);
 
         Utils.sleepUnchecked(START_DELAY);
         outData = toxic.transform(IN_DATA);
-        verify(mockRunner).run();
+        verify(mockInterruptible).interrupt();
         assertEquals(IN_DATA, outData);
     }
 }

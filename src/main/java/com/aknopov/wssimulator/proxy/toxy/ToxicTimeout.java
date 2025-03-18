@@ -7,15 +7,15 @@ import java.time.Duration;
  * ToxicTimeout closes proxy streams after certain period of time
  */
 public class ToxicTimeout extends Toxic {
-    private final Runnable stopper;
+    private final Interruptible stopper;
 
     /**
      * Creates class instance with start delay
      *
      * @param startDelay delay from {@link Toxic#start()} to shut down connection
-     * @param stopper runnable that will shut down connection
+     * @param stopper interruptable that will shut down connection
      */
-    public ToxicTimeout(Duration startDelay, Runnable stopper) {
+    public ToxicTimeout(Duration startDelay, Interruptible stopper) {
         super(startDelay);
         this.stopper = stopper;
     }
@@ -24,7 +24,7 @@ public class ToxicTimeout extends Toxic {
     @SuppressWarnings("CanIgnoreReturnValueSuggester")
     public ByteBuffer transform(ByteBuffer indata) {
         if (canStart()) {
-            stopper.run();
+            stopper.interrupt();
         }
         return indata;
     }

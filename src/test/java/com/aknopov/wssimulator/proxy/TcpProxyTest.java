@@ -34,14 +34,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class TcpProxyTest {
     private static final Class<byte[]> BYTE_ARRAY_TYPE = byte[].class;
     private static final Duration TEST_DURATION = Duration.ofMillis(300);
-    private static final Duration SLEEP_TIME = TEST_DURATION.dividedBy(10);
-    private static final Duration ACCEPT_PAUSE = TEST_DURATION.dividedBy(3);
+    private static final Duration SHORT_PAUSE = TEST_DURATION.dividedBy(10);
+    private static final Duration ACCEPT_PAUSE = TEST_DURATION.dividedBy(4);
     private static final InetSocketAddress DOWN_ADDRESS = new InetSocketAddress("localhost", 1234);
     private static final InetSocketAddress UP_ADDRESS = new InetSocketAddress("localhost", 4321);
 
@@ -70,7 +71,7 @@ class TcpProxyTest {
 
     @Test
     void testLifeSpan() {
-        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, new SocketFactory());
+        TcpProxy proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, new SocketFactory());
 
         Instant startTime = Instant.now();
         proxy.start();
@@ -86,7 +87,7 @@ class TcpProxyTest {
         when(mockInStreamUp.read(any(BYTE_ARRAY_TYPE))).thenReturn(0);
         when(mockInStreamDown.read(any(BYTE_ARRAY_TYPE))).thenReturn(0);
 
-        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        TcpProxy proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
 
         Instant startTime = Instant.now();
         proxy.start();
@@ -120,7 +121,7 @@ class TcpProxyTest {
                 .thenAnswer(answersWithDelay(ACCEPT_PAUSE.toMillis(), i -> mockSocketDown))
                 .thenAnswer(answersWithDelay(TEST_DURATION.toMillis(), i -> null));
 
-        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        TcpProxy proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
         proxy.start();
         proxy.awaitTermination(TEST_DURATION);
 
@@ -137,19 +138,19 @@ class TcpProxyTest {
         when(mockInStreamDown.read(any(BYTE_ARRAY_TYPE))).thenReturn(2);
         doThrow(IOException.class).when(mockOutStreamDown).write(any(BYTE_ARRAY_TYPE), anyInt(), anyInt());
         doThrow(IOException.class).when(mockOutStreamUp).write(any(BYTE_ARRAY_TYPE), anyInt(), anyInt());
-        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        TcpProxy proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
         assertDoesNotThrow(proxy::start);
         proxy.awaitTermination(TEST_DURATION);
 
         doThrow(IOException.class).when(mockInStreamDown).read(any(BYTE_ARRAY_TYPE));
         doThrow(IOException.class).when(mockInStreamUp).read(any(BYTE_ARRAY_TYPE));
-        proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
         assertDoesNotThrow(proxy::start);
         proxy.awaitTermination(TEST_DURATION);
 
         doThrow(IOException.class).when(mockSocketUp).getOutputStream();
         doThrow(IOException.class).when(mockSocketDown).getInputStream();
-        proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
         assertDoesNotThrow(proxy::start);
         proxy.awaitTermination(TEST_DURATION);
     }
@@ -160,9 +161,9 @@ class TcpProxyTest {
             ExecutorService mockExecutor = mock(ExecutorService.class);
             mockeThreadPool.when(() -> NamedThreadPool.createFixedPool(anyInt(), anyString())).thenReturn(mockExecutor);
 
-            TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+            TcpProxy proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
             proxy.start();
-            Utils.sleepUnchecked(SLEEP_TIME);
+            Utils.sleepUnchecked(SHORT_PAUSE);
             proxy.stop();
 
             verify(mockExecutor, times(2)).submit(any(Runnable.class));
@@ -176,16 +177,16 @@ class TcpProxyTest {
 
     @Test
     void testNoInterruptionsOnStop() {
-        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        TcpProxy proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
         proxy.start();
-        Utils.sleepUnchecked(SLEEP_TIME);
+        Utils.sleepUnchecked(SHORT_PAUSE);
         proxy.stop();
 
     }
 
     @Test
     void testAwaitTerminationOnTimeout() {
-        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        TcpProxy proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
         proxy.start();
 
         assertFalse(proxy.awaitTermination(TEST_DURATION.dividedBy(5)));
@@ -194,19 +195,19 @@ class TcpProxyTest {
 
     @Test
     void testAwaitTerminationOnInterrupt() {
-        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        TcpProxy proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
         proxy.start();
 
         Thread testThread = Thread.currentThread();
         ScheduledThreadPoolExecutor shutdownExecutor = new ScheduledThreadPoolExecutor(1);
-        shutdownExecutor.schedule(testThread::interrupt, SLEEP_TIME.toMillis(), TimeUnit.MILLISECONDS);
+        shutdownExecutor.schedule(testThread::interrupt, SHORT_PAUSE.toMillis(), TimeUnit.MILLISECONDS);
 
-        assertFalse(proxy.awaitTermination(SLEEP_TIME.multipliedBy(2)));
+        assertFalse(proxy.awaitTermination(SHORT_PAUSE.multipliedBy(2)));
     }
 
     @Test
     void testIOErrors() throws IOException {
-        TcpProxy proxy = new TcpProxy(PROXY_CONFIG, mockFactory);
+        TcpProxy proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
 
         doThrow(SocketException.class).when(mockFactory).creatUpstreamSocket(anyInt());
         assertDoesNotThrow(() -> proxy.proxyCommunications(mockSocketDown));
@@ -216,5 +217,24 @@ class TcpProxyTest {
 
         doThrow(IOException.class).when(mockFactory).createServerSocket(anyInt());
         assertDoesNotThrow(proxy::waitForIncomingConnections);
+    }
+
+    @Test
+    void testInterruptConnection() throws IOException {
+        TcpProxy proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
+
+        // Before establlishing connection
+        proxy.interrupt();
+        verifyNoInteractions(mockSocketUp);
+        verifyNoInteractions(mockSocketDown);
+
+        proxy.start();
+        Utils.sleepUnchecked(ACCEPT_PAUSE.plus(SHORT_PAUSE));
+        proxy.interrupt();
+
+        verify(mockSocketUp).close();
+        verify(mockSocketDown).close();
+
+        proxy.stop();
     }
 }

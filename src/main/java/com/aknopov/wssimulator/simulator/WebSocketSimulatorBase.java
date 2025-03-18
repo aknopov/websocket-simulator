@@ -87,7 +87,6 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendTextMessage(String message) {
-        logger.debug("Request to send text '{}'", message);
         try {
             requireNonNull(endpoint).sendTextMessage(message);
             history.addEvent(Event.create(EventType.SEND_MESSAGE, message));
@@ -101,7 +100,6 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendBinaryMessage(ByteBuffer message) {
-        logger.debug("Request to send binary message with {} bytes", message.remaining());
         try {
             requireNonNull(endpoint).sendBinaryMessage(message);
             history.addEvent(Event.create(EventType.SEND_MESSAGE, "Binary, len=" + message.remaining()));
@@ -187,10 +185,10 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             case OPEN -> process(() -> {
                 waitFor(act, SimulatorEndpoint.class); // endpoint is already set
             });
-            case CLOSED -> {
+            case CLOSED -> process(() -> {
                 CloseCode code = waitFor(act, CloseCode.class);
                 consumeData(act, code);
-            }
+            });
             case RECEIVE_MESSAGE -> process(() -> {
                 WebSocketMessage message = waitFor(act, WebSocketMessage.class);
                 consumeData(act, message);

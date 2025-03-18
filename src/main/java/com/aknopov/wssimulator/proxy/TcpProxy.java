@@ -14,17 +14,22 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nullable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.SocketFactory;
+import com.aknopov.wssimulator.proxy.toxy.Interruptible;
 import com.aknopov.wssimulator.proxy.toxy.Toxic;
+import com.aknopov.wssimulator.proxy.toxy.ToxicLatency;
 import com.aknopov.wssimulator.proxy.toxy.ToxicNoop;
+import com.aknopov.wssimulator.proxy.toxy.ToxicTimeout;
 
 /**
  * TCP proxy implementation for "localhost"
  */
-public class TcpProxy {
+public class TcpProxy implements Interruptible {
     private static final Logger logger = LoggerFactory.getLogger(TcpProxy.class);
 
     private final ProxyConfig proxyConfig;
@@ -32,24 +37,61 @@ public class TcpProxy {
     private final ExecutorService executor;
     private final Toxic toxic;
     private final CountDownLatch stopped = new CountDownLatch(1);
-
-    TcpProxy(ProxyConfig proxyConfig, SocketFactory socketFactory) {
-        this(proxyConfig, socketFactory, new ToxicNoop());
-    }
+    @Nullable
+    private Socket downstreamSocket;
+    @Nullable
+    private Socket upstreamSocket;
 
     /**
-     * Creates proxy with configuration and socket factory
+     * Creates not intoxicated proxy with configuration and socket factory
      *
      * @param proxyConfig proxy config
      * @param socketFactory socket factory
-     * @param toxic toxy of choice
+     * @return proxy without toxic
      */
-    public TcpProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, Toxic toxic) {
+    public static TcpProxy createNonToxicProxy(ProxyConfig proxyConfig, SocketFactory socketFactory) {
+        return new TcpProxy(proxyConfig, socketFactory, new ToxicNoop());
+    }
+
+    /**
+     * Creates proxy that delays data exchange with specified parameters
+     *
+     * @param proxyConfig proxy config
+     * @param socketFactory socket factory
+     * @param startTime interval since proxy start to delay data transmission
+     * @param latency average latency
+     * @param jitter latency variance
+     * @return proxy with toxic latency
+     */
+    public static TcpProxy createJitterProxy(ProxyConfig proxyConfig, SocketFactory socketFactory,
+            Duration startTime, Duration latency, Duration jitter) {
+        return new TcpProxy(proxyConfig, socketFactory, new ToxicLatency(startTime, latency, jitter));
+    }
+
+    /**
+     * Creates proxy that interrupts connection at some point.
+     *
+     * @param proxyConfig proxy config
+     * @param socketFactory socket factory
+     * @param interruptTime interval sine start to interrupt connection
+     * @return proxy that interrupts connection
+     */
+    public static TcpProxy createInterruptingProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, Duration interruptTime) {
+        return new TcpProxy(proxyConfig, socketFactory, interruptTime);
+    }
+
+    private TcpProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, Toxic toxic) {
         this.proxyConfig = proxyConfig;
         this.socketFactory = socketFactory;
-        this.toxic = toxic;
         this.executor = NamedThreadPool.createFixedPool(3, "TcpProxy");
+        this.toxic = toxic;
+    }
 
+    private TcpProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, Duration interruptTime) {
+        this.proxyConfig = proxyConfig;
+        this.socketFactory = socketFactory;
+        this.executor = NamedThreadPool.createFixedPool(3, "TcpProxy");
+        this.toxic = new ToxicTimeout(interruptTime, this);
     }
 
     /**
@@ -69,6 +111,26 @@ public class TcpProxy {
         if (stopped.getCount() > 0) {
             stopped.countDown();
             executor.shutdownNow();
+        }
+    }
+
+    @Override
+    public void interrupt() {
+        logger.debug("Interrupting connection");
+        closeSocket(downstreamSocket);
+        closeSocket(upstreamSocket);
+        downstreamSocket = null;
+        upstreamSocket = null;
+    }
+
+    private static void closeSocket(@Nullable Socket socket) {
+        if (socket != null) {
+            try {
+                socket.close();
+            }
+            catch (IOException e) {
+                //ignore
+            }
         }
     }
 
@@ -117,8 +179,10 @@ public class TcpProxy {
     //VisibleForTesting
     void proxyCommunications(Socket downstreamSocket) {
         logger.debug("Connection accepted");
+        this.downstreamSocket = downstreamSocket;
         try (Socket upstreamSocket = socketFactory.creatUpstreamSocket(proxyConfig.upPort())) {
             logger.debug("Created proxy client on port {}", proxyConfig.upPort());
+            this.upstreamSocket = upstreamSocket;
 
             try (InputStream downInStream = downstreamSocket.getInputStream();
                  OutputStream downOutStream = downstreamSocket.getOutputStream();
@@ -142,6 +206,8 @@ public class TcpProxy {
         }
         finally {
             toxic.stop();
+            this.downstreamSocket = null;
+            this.upstreamSocket = null;
         }
     }
 

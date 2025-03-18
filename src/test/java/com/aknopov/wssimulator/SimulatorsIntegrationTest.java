@@ -73,8 +73,8 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
-        assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator.hasErrors());
     }
 
     @Test
@@ -99,8 +99,8 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
-        assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator.hasErrors());
     }
 
     @Test
@@ -145,9 +145,9 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator2.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
-        assertFalse(clientSimulator1.hasErrors(), "Client 1 errors: " + clientSimulator1.getErrors());
-        assertFalse(clientSimulator2.hasErrors(), "Client 2 errors: " + clientSimulator2.getErrors());
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator1.hasErrors());
+        assertFalse(clientSimulator2.hasErrors());
     }
 
     @Test

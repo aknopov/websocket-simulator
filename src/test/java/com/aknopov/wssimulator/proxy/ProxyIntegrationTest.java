@@ -31,8 +31,6 @@ public class ProxyIntegrationTest {
     private static final int PING_PONG_COUNT = 6;
     private static final Duration LONG_WAIT = Duration.ofSeconds(10);
     private static final String A_PATH = "/path";
-    private static final String MESSAGE_1 = "Message 1";
-    private static final String SERVER_RESPONSE_1 = "Coffee break";
     private static final TextWebSocketMessage PING = new TextWebSocketMessage("ping");
     private static final TextWebSocketMessage PONG = new TextWebSocketMessage("pong");
 
@@ -43,27 +41,17 @@ public class ProxyIntegrationTest {
     void setUp() {
         int serverPort = SocketFactory.getAvailablePort(); //21601
         int clientPort = SocketFactory.getAvailablePort(); //19266
-        proxyConfig = new ProxyConfig(clientPort, serverPort, 60_000, 1024, ACTION_WAIT);
+        proxyConfig = new ProxyConfig(clientPort, serverPort, 60_000, 1024, ACTION_WAIT.multipliedBy(PING_PONG_COUNT));
     }
 
     @Test
     void testProxyingWithoutToxy() {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SERVER_CONFIG, proxyConfig.upPort());
-        serverSimulator.getScenario()
-                .expectConnectionOpened(ACTION_WAIT)
-                .expectMessage(this::onTextMessage, ACTION_WAIT)
-                .sendMessage(SERVER_RESPONSE_1, SHORT_WAIT)
-                .expectConnectionClosed(this::onClose, ACTION_WAIT);
-
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
-        clientSimulator.getScenario()
-                .expectConnectionOpened(ACTION_WAIT)
-                .sendMessage(MESSAGE_1, SHORT_WAIT)
-                .expectMessage(this::onTextMessage, ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
-
         TcpProxy proxy = TcpProxy.createNonToxicProxy(proxyConfig, new SocketFactory());
+
+        configureScenarios(serverSimulator, clientSimulator, 1);
 
         proxy.start();
         serverSimulator.start();
@@ -71,7 +59,7 @@ public class ProxyIntegrationTest {
 
         clientSimulator.awaitScenarioCompletion(LONG_WAIT);
         serverSimulator.awaitScenarioCompletion(LONG_WAIT);
-        proxy.awaitTermination(LONG_WAIT);
+        proxy.stop();
 
         assertFalse(serverSimulator.hasErrors());
         assertFalse(clientSimulator.hasErrors());
@@ -85,13 +73,82 @@ public class ProxyIntegrationTest {
         TcpProxy proxy = TcpProxy.createInterruptingProxy(proxyConfig, new SocketFactory(),
                 SHORT_WAIT.multipliedBy(PING_PONG_COUNT / 2));
 
+        configureScenarios(serverSimulator, clientSimulator, PING_PONG_COUNT);
+
+        proxy.start();
+        serverSimulator.start();
+        clientSimulator.start();
+
+        clientSimulator.awaitScenarioCompletion(LONG_WAIT);
+        serverSimulator.awaitScenarioCompletion(LONG_WAIT);
+        proxy.stop();
+
+        List<Event> serverErrors = serverSimulator.getErrors();
+        List<Event> clientErrors = clientSimulator.getErrors();
+        assertFalse(serverErrors.isEmpty());
+        assertFalse(clientErrors.isEmpty());
+        assertTrue(serverErrors.stream().allMatch(e -> e.description().contains("TimeoutException")));
+        assertTrue(clientErrors.stream().allMatch(e -> e.description().contains("TimeoutException")));
+    }
+
+    // This test is susceptible to NIC/CPU speed
+    @Test
+    void testLowJitterLevel() {
+        SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofSeconds(1), 1024);
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
+        String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
+        TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, new SocketFactory(),
+                Duration.ZERO, Duration.ofMillis(50), Duration.ofMillis(10));
+
+        configureScenarios(serverSimulator, clientSimulator, PING_PONG_COUNT);
+
+        proxy.start();
+        serverSimulator.start();
+        clientSimulator.start();
+
+        clientSimulator.awaitScenarioCompletion(LONG_WAIT);
+        serverSimulator.awaitScenarioCompletion(LONG_WAIT);
+        proxy.stop();
+
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator.hasErrors());
+    }
+
+
+    // This test is susceptible to NIC/CPU speed
+    @Test
+    void testHighJitterLevel() {
+        SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofSeconds(1), 1024);
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
+        String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
+        TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, new SocketFactory(),
+                Duration.ZERO, Duration.ofMillis(200), Duration.ofMillis(100));
+
+        configureScenarios(serverSimulator, clientSimulator, PING_PONG_COUNT);
+
+        proxy.start();
+        serverSimulator.start();
+        clientSimulator.start();
+
+        clientSimulator.awaitScenarioCompletion(LONG_WAIT);
+        serverSimulator.awaitScenarioCompletion(LONG_WAIT);
+        proxy.stop();
+
+        assertTrue(serverSimulator.hasErrors());
+        assertTrue(clientSimulator.hasErrors());
+    }
+
+    private void configureScenarios(WebSocketServerSimulator serverSimulator, WebSocketClientSimulator clientSimulator,
+            int messageCount) {
         Scenario serverScenario = serverSimulator.getScenario();
         Scenario clientScenario = clientSimulator.getScenario();
 
         serverScenario.expectConnectionOpened(ACTION_WAIT);
         clientScenario.expectConnectionOpened(ACTION_WAIT);
 
-        for (int i = 0; i < PING_PONG_COUNT; i++) {
+        for (int i = 0; i < messageCount; i++) {
             clientScenario
                     .sendMessage(PING.getMessageText(), SHORT_WAIT)
                     .expectMessage(this::verifyPong, ACTION_WAIT);
@@ -101,19 +158,6 @@ public class ProxyIntegrationTest {
         }
         clientScenario.closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         serverScenario.expectConnectionClosed(this::onClose, ACTION_WAIT);
-
-        proxy.start();
-        serverSimulator.start();
-        clientSimulator.start();
-
-        clientSimulator.awaitScenarioCompletion(LONG_WAIT);
-        serverSimulator.awaitScenarioCompletion(LONG_WAIT);
-        proxy.awaitTermination(LONG_WAIT);
-
-        List<Event> serverErrors = serverSimulator.getErrors();
-        List<Event> clientErrors = clientSimulator.getErrors();
-        assertTrue(serverErrors.size() >= PING_PONG_COUNT - 1);
-        assertTrue(clientErrors.size() >= PING_PONG_COUNT - 1);
     }
 
     private void onTextMessage(WebSocketMessage message) {

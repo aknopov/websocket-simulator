@@ -1,5 +1,7 @@
 package com.aknopov.wssimulator;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.Duration;
 
 import javax.annotation.Nullable;
@@ -89,5 +91,17 @@ public final class Utils {
      */
     public static void sleepUnchecked(Duration sleepTime) {
         sleepUnchecked(sleepTime.toMillis());
+    }
+
+    /**
+     * Converts exception stack to a string
+     *
+     * @param ex the exception
+     * @return converted exception
+     */
+    public static String stringify(Exception ex)  {
+        StringWriter sw = new StringWriter();
+        ex.printStackTrace(new PrintWriter(sw, true));
+        return sw.toString().replace("\r\n", "\n");
     }
 }

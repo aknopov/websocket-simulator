@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UtilsTest {
 
@@ -37,5 +38,14 @@ class UtilsTest {
         assertDoesNotThrow(sleepThread::interrupt);
 
         Utils.sleepUnchecked(Duration.ofMillis(SLEEP_TIME));
+    }
+
+    @Test
+    void testStringify() {
+        InterruptedException exception = new InterruptedException("Thread was interrupted");
+
+        String stackString = Utils.stringify(exception);
+        assertTrue(stackString.startsWith("java.lang.InterruptedException: Thread was interrupted\n"
+                + "\tat com.aknopov.wssimulator.UtilsTest.testStringify"));
     }
 }

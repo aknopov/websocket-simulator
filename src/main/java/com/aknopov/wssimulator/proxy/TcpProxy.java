@@ -183,6 +183,9 @@ public class TcpProxy implements Interruptible {
         try (Socket upstreamSocket = socketFactory.creatUpstreamSocket(proxyConfig.upPort())) {
             logger.debug("Created proxy client on port {}", proxyConfig.upPort());
             this.upstreamSocket = upstreamSocket;
+            // Force sending RST instead of FIN on both sockets when closed
+            downstreamSocket.setSoLinger(true, 0);
+            upstreamSocket.setSoLinger(true, 0);
 
             try (InputStream downInStream = downstreamSocket.getInputStream();
                  OutputStream downOutStream = downstreamSocket.getOutputStream();

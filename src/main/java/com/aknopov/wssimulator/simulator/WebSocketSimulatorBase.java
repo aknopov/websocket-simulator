@@ -169,7 +169,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             }
         }
         catch (ScenarioInterruptedException ex) {
-            recordError("Scenario run has been interrupted: " + ex.stringify());
+            recordError("Scenario run has been interrupted: " + Utils.stringify(ex));
         }
         finally {
             scenario.markCompletion();
@@ -231,7 +231,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             recordError("NPE at " + Arrays.toString(ex.getStackTrace()));
         }
         catch (TimeoutException ex) {
-            recordError(ex.getMessage() + ": " + ex.stringify());
+            recordError(ex.getMessage() + ": " + Utils.stringify(ex));
         }
         catch (ValidationException ex) {
             recordError("Expectation wasn't fulfilled: " + ex.getMessage());

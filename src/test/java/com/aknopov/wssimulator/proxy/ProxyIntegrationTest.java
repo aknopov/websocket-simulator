@@ -182,10 +182,6 @@ public class ProxyIntegrationTest {
         serverScenario.expectConnectionClosed(this::onClose, ACTION_WAIT);
     }
 
-    private void onTextMessage(WebSocketMessage message) {
-        logger.info("Received '{}'", message.getMessageText());
-    }
-
     private void onClose(CloseCode closeCode) {
         logger.info("Connection closed with {}", closeCode);
     }

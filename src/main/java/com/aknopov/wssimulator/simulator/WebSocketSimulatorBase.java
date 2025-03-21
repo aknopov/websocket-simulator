@@ -51,8 +51,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             EventType.UPGRADE, new ResettableLock<>(ProtocolUpgrade.class),
             EventType.OPEN, new ResettableLock<>(SimulatorEndpoint.class),
             EventType.CLOSED, new ResettableLock<>(CloseCode.class),
-            EventType.RECEIVE_MESSAGE, new ResettableLock<>(WebSocketMessage.class),
-            EventType.IO_ERROR, new ResettableLock<>(Throwable.class));
+            EventType.RECEIVE_MESSAGE, new ResettableLock<>(WebSocketMessage.class));
 
     protected WebSocketSimulatorBase(String threadName) {
         this.scenarioThread = new Thread(this::playScenario, threadName);
@@ -193,10 +192,6 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 WebSocketMessage message = waitFor(act, WebSocketMessage.class);
                 consumeData(act, message);
             });
-            case IO_ERROR -> process(() -> {
-                Throwable error = waitFor(act, Throwable.class);
-                consumeData(act, error);
-            });
             case SEND_MESSAGE -> process(() -> {
                 wait(act.delay());
                 WebSocketMessage message = provideData(act, WebSocketMessage.class);
@@ -304,7 +299,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
 
     @Override
     public void onError(Throwable error) {
-        releaseEvent(EventType.IO_ERROR, error);
+        // Nothing
     }
 
     @Override

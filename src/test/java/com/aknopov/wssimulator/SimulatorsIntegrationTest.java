@@ -23,6 +23,7 @@ import static com.aknopov.wssimulator.simulator.WebSocketServerSimulator.DYNAMIC
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SimulatorsIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class);
@@ -98,13 +99,14 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator.hasErrors());
+        assertNoErrorsOnGithub(serverSimulator, "Server");
+        assertNoErrorsOnGithub(clientSimulator, "Client");
+//        assertFalse(serverSimulator.hasErrors());
+//        assertFalse(clientSimulator.hasErrors());
     }
 
     @Test
-    void testClientReconnect() throws Exception {
-        CountDownLatch intermission = new CountDownLatch(1);
+    void testClientReconnect() {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         serverSimulator.getScenario()
                 // act 1
@@ -143,9 +145,20 @@ public class SimulatorsIntegrationTest {
 
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator1.hasErrors());
-        assertFalse(clientSimulator2.hasErrors());
+        assertNoErrorsOnGithub(serverSimulator, "Server");
+        assertNoErrorsOnGithub(clientSimulator1, "Client1");
+        assertNoErrorsOnGithub(clientSimulator2, "Client2");
+//        assertFalse(serverSimulator.hasErrors());
+//        assertFalse(clientSimulator1.hasErrors());
+//        assertFalse(clientSimulator2.hasErrors());
+    }
+
+    // TODO for GitHub builds
+    private void assertNoErrorsOnGithub(WebSocketSimulator simulator, String hint) {
+        if (simulator.hasErrors()) {
+            logger.error("{} errors: {}", hint, simulator.getErrors());
+            fail();
+        }
     }
 
     @Test

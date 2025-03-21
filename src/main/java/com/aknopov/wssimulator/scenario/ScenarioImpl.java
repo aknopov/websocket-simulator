@@ -71,12 +71,6 @@ public class ScenarioImpl implements Scenario {
     }
 
     @Override
-    public Scenario expectIoError(Consumer<Throwable> validator, Duration waitPeriod) {
-        acts.add(new Act<>(waitPeriod, EventType.IO_ERROR, validator));
-        return this;
-    }
-
-    @Override
     public Scenario perform(Runnable runnable, Duration initialDelay) {
         acts.add(new Act<>(initialDelay, EventType.ACTION, x -> runnable.run()));
         return this;

@@ -8,10 +8,12 @@ import org.junit.jupiter.api.Test;
 
 import com.aknopov.wssimulator.Utils;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ToxicLatencyTest extends ToxicTestBase {
     private static final Duration DATA_DELAY = Duration.ofMillis(50);
@@ -37,8 +39,8 @@ class ToxicLatencyTest extends ToxicTestBase {
         Instant testEndTime = Instant.now();
 
         assertEquals(List.of(IN_DATA), outData);
-        long duration = Duration.between(testEndTime, testStartTime).toMillis();
-        assertTrue(duration <= TIME_PRECISION.toMillis());
+        Duration duration = Duration.between(testEndTime, testStartTime);
+        assertThat(duration, lessThanOrEqualTo(TIME_PRECISION));
 
         Utils.sleepUnchecked(START_DELAY.plus(TIME_PRECISION));
 
@@ -49,9 +51,9 @@ class ToxicLatencyTest extends ToxicTestBase {
 
             assertEquals(List.of(IN_DATA), outData);
 
-            duration = Duration.between(testStartTime, testEndTime).toMillis();
-            assertTrue(duration >= DELAY_MINUS_JITTER.toMillis());
-            assertTrue(duration <= DELAY_PLUS_JITTER.toMillis());
+            duration = Duration.between(testStartTime, testEndTime);
+            assertThat(duration, greaterThanOrEqualTo(DELAY_MINUS_JITTER));
+            assertThat(duration, lessThanOrEqualTo(DELAY_PLUS_JITTER));
         }
     }
 }

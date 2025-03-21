@@ -26,6 +26,7 @@ import com.aknopov.wssimulator.proxy.toxy.Toxic;
 import com.aknopov.wssimulator.proxy.toxy.ToxicInterrupter;
 import com.aknopov.wssimulator.proxy.toxy.ToxicLatency;
 import com.aknopov.wssimulator.proxy.toxy.ToxicNoop;
+import com.aknopov.wssimulator.proxy.toxy.ToxicSlicer;
 
 /**
  * TCP proxy implementation for "localhost"
@@ -80,6 +81,19 @@ public class TcpProxy implements Interruptible {
      */
     public static TcpProxy createInterruptingProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, Duration interruptTime) {
         return new TcpProxy(proxyConfig, socketFactory, interruptTime);
+    }
+
+    /**
+     * Creates proxy that slices data in smaller pieces
+     *
+     * @param proxyConfig proxy config
+     * @param socketFactory socket factory
+     * @param sliceSize average size of sliced packets (max is twice larger)
+     * @param delay maximum random delay before providing sliced packets
+     * @return slicing proxy
+     */
+    public static TcpProxy createSlicerProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, int sliceSize, Duration delay) {
+        return new TcpProxy(proxyConfig, socketFactory, new ToxicSlicer(delay, sliceSize));
     }
 
     private TcpProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, Toxic toxic) {

@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 
 import com.aknopov.wssimulator.Utils;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ToxicNoopTest extends ToxicTestBase {
@@ -22,7 +24,7 @@ class ToxicNoopTest extends ToxicTestBase {
         Instant testEndTime = Instant.now();
 
         assertEquals(List.of(IN_DATA), outData);
-        assertTrue(Duration.between(testStartTime, testEndTime).compareTo(TIME_PRECISION) < 0);
+        assertThat(Duration.between(testStartTime, testEndTime), lessThanOrEqualTo(TIME_PRECISION));
 
         Utils.sleepUnchecked(100);
         testStartTime = Instant.now();
@@ -30,6 +32,6 @@ class ToxicNoopTest extends ToxicTestBase {
         testEndTime = Instant.now();
 
         assertEquals(List.of(IN_DATA), outData);
-        assertTrue(Duration.between(testStartTime, testEndTime).compareTo(TIME_PRECISION) < 0);
+        assertThat(Duration.between(testStartTime, testEndTime), lessThanOrEqualTo(TIME_PRECISION));
     }
 }

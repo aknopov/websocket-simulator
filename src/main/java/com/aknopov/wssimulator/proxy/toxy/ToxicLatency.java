@@ -12,7 +12,7 @@ import com.aknopov.wssimulator.Utils;
  * ToxicLatency delays input data by {@code latency ± rand(jitter) }
  */
 public class ToxicLatency extends Toxic {
-    Random randomizer = new Random(Instant.now().toEpochMilli());
+    private static final Random randomizer = new Random(Instant.now().toEpochMilli());
 
     private final long latencyMs;
     private final long jitterMs;

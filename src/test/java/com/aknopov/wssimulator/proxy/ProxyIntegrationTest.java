@@ -94,7 +94,7 @@ public class ProxyIntegrationTest {
     // This test is susceptible to NIC/CPU speed
     @Test
     void testLowJitterLevel() {
-        SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofSeconds(1), 1024);
+        SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofSeconds(2), 1024);
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
@@ -138,6 +138,28 @@ public class ProxyIntegrationTest {
 
         assertTrue(serverSimulator.hasErrors());
         assertTrue(clientSimulator.hasErrors());
+    }
+
+    @Test
+    void testNonToxicSlicer() {
+        SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofSeconds(1), 1024);
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
+        String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
+        TcpProxy proxy = TcpProxy.createSlicerProxy(proxyConfig, new SocketFactory(), 32, Duration.ofMillis(50));
+
+        configureScenarios(serverSimulator, clientSimulator, PING_PONG_COUNT);
+
+        proxy.start();
+        serverSimulator.start();
+        clientSimulator.start();
+
+        clientSimulator.awaitScenarioCompletion(LONG_WAIT);
+        serverSimulator.awaitScenarioCompletion(LONG_WAIT);
+        proxy.stop();
+
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator.hasErrors());
     }
 
     private void configureScenarios(WebSocketServerSimulator serverSimulator, WebSocketClientSimulator clientSimulator,

@@ -93,7 +93,7 @@ class WebSocketSimulatorBaseTest {
         List<Event> events = simulator.getHistory();
         assertEquals(1, events.size());
         assertEquals(EventType.SEND_MESSAGE, events.get(0).eventType());
-        assertEquals("Binary, len=" + BINARY_MESSAGE.remaining(), events.get(0).description());
+        assertEquals("Binary, len=" + BINARY_MESSAGE.limit(), events.get(0).description());
     }
 
     @Test

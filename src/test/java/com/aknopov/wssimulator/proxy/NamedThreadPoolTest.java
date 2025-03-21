@@ -8,6 +8,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,6 +45,6 @@ class NamedThreadPoolTest {
         assertTrue(executor.awaitTermination(TEST_TIMEOUT, TimeUnit.MILLISECONDS));
         assertTrue(executor.isTerminated());
 
-        assertTrue(threadNameRef.get().startsWith("prefix"), threadNameRef.get());
+        assertThat(threadNameRef.get(), startsWith("prefix"));
     }
 }

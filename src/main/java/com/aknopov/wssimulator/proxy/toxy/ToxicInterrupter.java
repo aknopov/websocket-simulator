@@ -2,6 +2,7 @@ package com.aknopov.wssimulator.proxy.toxy;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.Collections;
 
 /**
  * ToxicInterrupter closes proxy streams after certain period of time
@@ -21,11 +22,10 @@ public class ToxicInterrupter extends Toxic {
     }
 
     @Override
-    @SuppressWarnings("CanIgnoreReturnValueSuggester")
-    public ByteBuffer transform(ByteBuffer inData) {
+    public Iterable<ByteBuffer> transformData(ByteBuffer inData) {
         if (canStart()) {
             stopper.interrupt();
         }
-        return inData;
+        return Collections.singletonList(inData);
     }
 }

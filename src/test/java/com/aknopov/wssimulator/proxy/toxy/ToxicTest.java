@@ -3,6 +3,7 @@ package com.aknopov.wssimulator.proxy.toxy;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,24 +39,21 @@ class ToxicTest  extends ToxicTestBase {
         }
 
         @Override
-        public ByteBuffer transform(ByteBuffer inData) {
-            if (canStart()) {
-                return OUT_DATA;
-            }
-            return inData;
+        public Iterable<ByteBuffer> transformData(ByteBuffer inData) {
+            return List.of(canStart() ? OUT_DATA : inData);
         }
     }
 
     @Test
     void testStart() {
         ToxicSample toxic = new ToxicSample(START_DELAY);
-        assertThrows(IllegalStateException.class, () -> toxic.transform(IN_DATA));
+        assertThrows(IllegalStateException.class, () -> toxic.transformData(IN_DATA));
 
         toxic.start();
-        assertEquals(IN_DATA, toxic.transform(IN_DATA));
+        assertEquals(List.of(IN_DATA), toxic.transformData(IN_DATA));
 
         Utils.sleepUnchecked(START_DELAY);
-        assertEquals(OUT_DATA, toxic.transform(IN_DATA));
+        assertEquals(List.of(OUT_DATA), toxic.transformData(IN_DATA));
     }
 
     @Test

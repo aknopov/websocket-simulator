@@ -3,6 +3,7 @@ package com.aknopov.wssimulator.proxy.toxy;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Random;
 
 import com.aknopov.wssimulator.Utils;
@@ -17,11 +18,11 @@ public class ToxicLatency extends Toxic {
     private final long jitterMs;
 
     /**
-     * Creates the instance.
+     * Creates the instance
      *
      * @param startDelay start delay of toxic
      * @param latency average latency
-     * @param jitter latency variance
+     * @param jitter latency variance <= latency
      */
     public ToxicLatency(Duration startDelay, Duration latency, Duration jitter) {
         super(startDelay);
@@ -32,13 +33,11 @@ public class ToxicLatency extends Toxic {
     }
 
     @Override
-    @SuppressWarnings({"CanIgnoreReturnValueSuggester", "PreferJavaTimeOverload"})
-    public ByteBuffer transform(ByteBuffer inData) {
-
+    public Iterable<ByteBuffer> transformData(ByteBuffer inData) {
         if (canStart()) {
-            long sleepTimeMs = latencyMs + randomizer.nextLong(-jitterMs, jitterMs);
-            Utils.sleepUnchecked(sleepTimeMs);
+            Duration sleepTime = Duration.ofMillis(latencyMs + randomizer.nextLong(-jitterMs, jitterMs));
+            Utils.sleepUnchecked(sleepTime);
         }
-        return inData;
+        return Collections.singletonList(inData);
     }
 }

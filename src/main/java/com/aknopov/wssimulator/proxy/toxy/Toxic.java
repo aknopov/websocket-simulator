@@ -55,10 +55,10 @@ public abstract class Toxic {
     }
 
     /**
-     * Transforms original data by modifying it and/or applying delay.
-     * 
+     * Transforms original data by splitting, modifying it and/or applying delay.
+     *
      * @param inData original data
      * @return transformed data
      */
-    public abstract ByteBuffer transform(ByteBuffer inData);
+    public abstract Iterable<ByteBuffer> transformData(ByteBuffer inData);
 }

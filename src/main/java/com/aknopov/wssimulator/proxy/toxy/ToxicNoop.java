@@ -2,6 +2,7 @@ package com.aknopov.wssimulator.proxy.toxy;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.Collections;
 
 /**
  * No toxic effects
@@ -15,8 +16,7 @@ public class ToxicNoop extends Toxic {
     }
 
     @Override
-    @SuppressWarnings("CanIgnoreReturnValueSuggester")
-    public ByteBuffer transform(ByteBuffer inData) {
-        return inData;
+    public Iterable<ByteBuffer> transformData(ByteBuffer inData) {
+        return Collections.singletonList(inData);
     }
 }

@@ -1,8 +1,8 @@
 package com.aknopov.wssimulator.proxy.toxy;
 
-import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,10 +33,10 @@ class ToxicLatencyTest extends ToxicTestBase {
         toxic.start();
 
         Instant testStartTime = Instant.now();
-        ByteBuffer outData = toxic.transform(IN_DATA);
+        var outData = toxic.transformData(IN_DATA);
         Instant testEndTime = Instant.now();
 
-        assertEquals(IN_DATA, outData);
+        assertEquals(List.of(IN_DATA), outData);
         long duration = Duration.between(testEndTime, testStartTime).toMillis();
         assertTrue(duration <= TIME_PRECISION.toMillis());
 
@@ -44,10 +44,10 @@ class ToxicLatencyTest extends ToxicTestBase {
 
         for (int i = 0; i < 5; i++) {
             testStartTime = Instant.now();
-            outData = toxic.transform(IN_DATA);
+            outData = toxic.transformData(IN_DATA);
             testEndTime = Instant.now();
 
-            assertEquals(IN_DATA, outData);
+            assertEquals(List.of(IN_DATA), outData);
 
             duration = Duration.between(testStartTime, testEndTime).toMillis();
             assertTrue(duration >= DELAY_MINUS_JITTER.toMillis());

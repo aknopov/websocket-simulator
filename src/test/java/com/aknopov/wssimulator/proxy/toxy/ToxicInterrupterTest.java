@@ -1,6 +1,6 @@
 package com.aknopov.wssimulator.proxy.toxy;
 
-import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -22,13 +22,13 @@ class ToxicInterrupterTest extends ToxicTestBase {
         toxic.start();
 
         Utils.sleepUnchecked(TIME_PRECISION);
-        ByteBuffer outData = toxic.transform(IN_DATA);
+        var outData = toxic.transformData(IN_DATA);
         verifyNoInteractions(mockInterruptible);
-        assertEquals(IN_DATA, outData);
+        assertEquals(List.of(IN_DATA), outData);
 
         Utils.sleepUnchecked(START_DELAY);
-        outData = toxic.transform(IN_DATA);
+        outData = toxic.transformData(IN_DATA);
         verify(mockInterruptible).interrupt();
-        assertEquals(IN_DATA, outData);
+        assertEquals(List.of(IN_DATA), outData);
     }
 }

@@ -1,8 +1,8 @@
 package com.aknopov.wssimulator.proxy.toxy;
 
-import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -18,18 +18,18 @@ class ToxicNoopTest extends ToxicTestBase {
         toxic.start();
 
         Instant testStartTime = Instant.now();
-        ByteBuffer outData = toxic.transform(IN_DATA);
+        var outData = toxic.transformData(IN_DATA);
         Instant testEndTime = Instant.now();
 
-        assertEquals(IN_DATA, outData);
+        assertEquals(List.of(IN_DATA), outData);
         assertTrue(Duration.between(testStartTime, testEndTime).compareTo(TIME_PRECISION) < 0);
 
         Utils.sleepUnchecked(100);
         testStartTime = Instant.now();
-        outData = toxic.transform(IN_DATA);
+        outData = toxic.transformData(IN_DATA);
         testEndTime = Instant.now();
 
-        assertEquals(IN_DATA, outData);
+        assertEquals(List.of(IN_DATA), outData);
         assertTrue(Duration.between(testStartTime, testEndTime).compareTo(TIME_PRECISION) < 0);
     }
 }

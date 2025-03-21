@@ -218,14 +218,18 @@ public class TcpProxy implements Interruptible {
         }
     }
 
+    @SuppressWarnings("ByteBufferBackingArray")
     private void hookupStreams(InputStream inputStream, OutputStream outputStream, String logHint) {
         logger.debug("Starting exchange {}", logHint);
-        byte[] buffer = new byte[proxyConfig.bufSize()];
+        ByteBuffer buffer = ByteBuffer.allocate(proxyConfig.bufSize());
         int len;
         try {
-            while (stopped.getCount() > 0 && (len = inputStream.read(buffer)) > 0) {
-                ByteBuffer toxicBuffer = toxic.transform(ByteBuffer.wrap(buffer, 0, len));
-                outputStream.write(toxicBuffer.array(), 0, toxicBuffer.remaining());
+            while (stopped.getCount() > 0 && (len = inputStream.read(buffer.array())) > 0) {
+                buffer.limit(len);
+                for (ByteBuffer toxicBuffer: toxic.transformData(buffer)) {
+                    outputStream.write(toxicBuffer.array(), toxicBuffer.arrayOffset(), toxicBuffer.remaining());
+                    outputStream.flush();
+                }
             }
         }
         catch (IOException ex) {

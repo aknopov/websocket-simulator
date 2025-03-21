@@ -57,8 +57,8 @@ public abstract class Toxic {
     /**
      * Transforms original data by modifying it and/or applying delay.
      * 
-     * @param indata original data
+     * @param inData original data
      * @return transformed data
      */
-    public abstract ByteBuffer transform(ByteBuffer indata);
+    public abstract ByteBuffer transform(ByteBuffer inData);
 }

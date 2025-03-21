@@ -38,11 +38,11 @@ class ToxicTest  extends ToxicTestBase {
         }
 
         @Override
-        public ByteBuffer transform(ByteBuffer indata) {
+        public ByteBuffer transform(ByteBuffer inData) {
             if (canStart()) {
                 return OUT_DATA;
             }
-            return indata;
+            return inData;
         }
     }
 

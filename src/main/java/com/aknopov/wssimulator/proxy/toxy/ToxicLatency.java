@@ -33,12 +33,12 @@ public class ToxicLatency extends Toxic {
 
     @Override
     @SuppressWarnings({"CanIgnoreReturnValueSuggester", "PreferJavaTimeOverload"})
-    public ByteBuffer transform(ByteBuffer indata) {
+    public ByteBuffer transform(ByteBuffer inData) {
 
         if (canStart()) {
             long sleepTimeMs = latencyMs + randomizer.nextLong(-jitterMs, jitterMs);
             Utils.sleepUnchecked(sleepTimeMs);
         }
-        return indata;
+        return inData;
     }
 }

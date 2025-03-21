@@ -28,8 +28,8 @@ public class ProxyIntegrationTest {
 
     private static final Duration ACTION_WAIT = Duration.ofMillis(500);
     private static final Duration SHORT_WAIT = Duration.ofMillis(50);
-    private static final int PING_PONG_COUNT = 6;
     private static final Duration LONG_WAIT = Duration.ofSeconds(10);
+    private static final int PING_PONG_COUNT = 6;
     private static final String A_PATH = "/path";
     private static final TextWebSocketMessage PING = new TextWebSocketMessage("ping");
     private static final TextWebSocketMessage PONG = new TextWebSocketMessage("pong");
@@ -119,12 +119,12 @@ public class ProxyIntegrationTest {
     // This test is susceptible to NIC/CPU speed
     @Test
     void testHighJitterLevel() {
-        SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofSeconds(1), 1024);
+        SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofMillis(400), 1024);
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
         TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, new SocketFactory(),
-                Duration.ZERO, Duration.ofMillis(200), Duration.ofMillis(100));
+                Duration.ZERO, Duration.ofMillis(200), Duration.ofMillis(200));
 
         configureScenarios(serverSimulator, clientSimulator, PING_PONG_COUNT);
 

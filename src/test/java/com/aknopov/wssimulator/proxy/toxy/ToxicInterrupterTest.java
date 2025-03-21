@@ -11,13 +11,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-class ToxicTimeoutTest extends ToxicTestBase {
+class ToxicInterrupterTest extends ToxicTestBase {
 
     private Interruptible mockInterruptible = mock(Interruptible.class);
 
     @Test
-    void testStopper() {
-        ToxicTimeout toxic = new ToxicTimeout(START_DELAY, mockInterruptible);
+    void testInterruption() {
+        ToxicInterrupter toxic = new ToxicInterrupter(START_DELAY, mockInterruptible);
 
         toxic.start();
 

@@ -16,7 +16,7 @@ public class ToxicNoop extends Toxic {
 
     @Override
     @SuppressWarnings("CanIgnoreReturnValueSuggester")
-    public ByteBuffer transform(ByteBuffer indata) {
-        return indata;
+    public ByteBuffer transform(ByteBuffer inData) {
+        return inData;
     }
 }

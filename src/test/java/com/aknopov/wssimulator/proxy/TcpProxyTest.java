@@ -131,7 +131,6 @@ class TcpProxyTest {
         verify(mockOutStreamUp, times(2)).write(any(BYTE_ARRAY_TYPE), eq(0), eq(2));
     }
 
-
     @Test
     void testCommunicationFailures() throws Exception {
         when(mockInStreamUp.read(any(BYTE_ARRAY_TYPE))).thenReturn(2);
@@ -142,14 +141,14 @@ class TcpProxyTest {
         assertDoesNotThrow(proxy::start);
         proxy.awaitTermination(TEST_DURATION);
 
-        doThrow(IOException.class).when(mockInStreamDown).read(any(BYTE_ARRAY_TYPE));
-        doThrow(IOException.class).when(mockInStreamUp).read(any(BYTE_ARRAY_TYPE));
+        when(mockInStreamDown.read(any(BYTE_ARRAY_TYPE))).thenThrow(IOException.class);
+        when(mockInStreamUp.read(any(BYTE_ARRAY_TYPE))).thenThrow(IOException.class);
         proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
         assertDoesNotThrow(proxy::start);
         proxy.awaitTermination(TEST_DURATION);
 
-        doThrow(IOException.class).when(mockSocketUp).getOutputStream();
-        doThrow(IOException.class).when(mockSocketDown).getInputStream();
+        when(mockSocketUp.getOutputStream()).thenThrow(IOException.class);
+        when(mockSocketDown.getInputStream()).thenThrow(IOException.class);
         proxy = TcpProxy.createNonToxicProxy(PROXY_CONFIG, mockFactory);
         assertDoesNotThrow(proxy::start);
         proxy.awaitTermination(TEST_DURATION);

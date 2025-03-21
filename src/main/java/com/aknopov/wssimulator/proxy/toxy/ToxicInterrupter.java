@@ -4,9 +4,9 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 
 /**
- * ToxicTimeout closes proxy streams after certain period of time
+ * ToxicInterrupter closes proxy streams after certain period of time
  */
-public class ToxicTimeout extends Toxic {
+public class ToxicInterrupter extends Toxic {
     private final Interruptible stopper;
 
     /**
@@ -15,17 +15,17 @@ public class ToxicTimeout extends Toxic {
      * @param startDelay delay from {@link Toxic#start()} to shut down connection
      * @param stopper interruptable that will shut down connection
      */
-    public ToxicTimeout(Duration startDelay, Interruptible stopper) {
+    public ToxicInterrupter(Duration startDelay, Interruptible stopper) {
         super(startDelay);
         this.stopper = stopper;
     }
 
     @Override
     @SuppressWarnings("CanIgnoreReturnValueSuggester")
-    public ByteBuffer transform(ByteBuffer indata) {
+    public ByteBuffer transform(ByteBuffer inData) {
         if (canStart()) {
             stopper.interrupt();
         }
-        return indata;
+        return inData;
     }
 }

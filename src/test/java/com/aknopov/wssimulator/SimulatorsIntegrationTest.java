@@ -5,7 +5,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -114,8 +113,6 @@ public class SimulatorsIntegrationTest {
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
                 .closeConnection(CloseCodes.GOING_AWAY, SHORT_WAIT)
-                // intermission
-                .perform(intermission::countDown, SHORT_WAIT)
                 // act 2
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
@@ -139,10 +136,11 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
 
         clientSimulator1.start();
-        intermission.await(ACTION_WAIT.toSeconds(), TimeUnit.SECONDS);
-        clientSimulator2.start();
+        assertTrue(clientSimulator1.awaitScenarioCompletion(ACTION_WAIT));
 
+        clientSimulator2.start();
         assertTrue(clientSimulator2.awaitScenarioCompletion(LONG_WAIT));
+
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
         assertFalse(serverSimulator.hasErrors());
@@ -213,7 +211,7 @@ public class SimulatorsIntegrationTest {
     // Assuming authentication is done in handshake handler...
     private void validateUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
         int status = protocolUpgrade.status();
-        boolean hasAuthHeader = protocolUpgrade.reqHeaders().containsKey("Authorization");
+        boolean hasAuthHeader = protocolUpgrade.reqHeaders().containsKey(AUTH_HEADER);
 
         if ( !(hasAuthHeader && status == ProtocolUpgrade.SWITCH_SUCCESS_CODE
            || !hasAuthHeader && status == UNAUTHORIZED_CODE)) {

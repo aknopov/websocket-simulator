@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
@@ -22,9 +23,9 @@ import org.slf4j.LoggerFactory;
 import com.aknopov.wssimulator.SocketFactory;
 import com.aknopov.wssimulator.proxy.toxy.Interruptible;
 import com.aknopov.wssimulator.proxy.toxy.Toxic;
+import com.aknopov.wssimulator.proxy.toxy.ToxicInterrupter;
 import com.aknopov.wssimulator.proxy.toxy.ToxicLatency;
 import com.aknopov.wssimulator.proxy.toxy.ToxicNoop;
-import com.aknopov.wssimulator.proxy.toxy.ToxicTimeout;
 
 /**
  * TCP proxy implementation for "localhost"
@@ -41,6 +42,7 @@ public class TcpProxy implements Interruptible {
     private Socket downstreamSocket;
     @Nullable
     private Socket upstreamSocket;
+    private final Consumer<Socket> socketModifier;
 
     /**
      * Creates not intoxicated proxy with configuration and socket factory
@@ -85,13 +87,15 @@ public class TcpProxy implements Interruptible {
         this.socketFactory = socketFactory;
         this.executor = NamedThreadPool.createFixedPool(3, "TcpProxy");
         this.toxic = toxic;
+        this.socketModifier = s -> {};
     }
 
     private TcpProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, Duration interruptTime) {
         this.proxyConfig = proxyConfig;
         this.socketFactory = socketFactory;
         this.executor = NamedThreadPool.createFixedPool(3, "TcpProxy");
-        this.toxic = new ToxicTimeout(interruptTime, this);
+        this.toxic = new ToxicInterrupter(interruptTime, this);
+        this.socketModifier = TcpProxy::resetOnClose;
     }
 
     /**
@@ -183,9 +187,9 @@ public class TcpProxy implements Interruptible {
         try (Socket upstreamSocket = socketFactory.creatUpstreamSocket(proxyConfig.upPort())) {
             logger.debug("Created proxy client on port {}", proxyConfig.upPort());
             this.upstreamSocket = upstreamSocket;
-            // Force sending RST instead of FIN on both sockets when closed
-            downstreamSocket.setSoLinger(true, 0);
-            upstreamSocket.setSoLinger(true, 0);
+            // Modify sockets
+            socketModifier.accept(downstreamSocket);
+            socketModifier.accept(upstreamSocket);
 
             try (InputStream downInStream = downstreamSocket.getInputStream();
                  OutputStream downOutStream = downstreamSocket.getOutputStream();
@@ -228,5 +232,15 @@ public class TcpProxy implements Interruptible {
             logger.error("Error in transmission", ex);
         }
         logger.debug("Done with exchange {}", logHint);
+    }
+
+    // Force sending RST instead of FIN on a socket when closed
+    private static void resetOnClose(Socket socket) {
+        try {
+            socket.setSoLinger(true, 0);
+        }
+        catch (SocketException e) {
+            logger.error("Can't modify socket behavior", e);
+        }
     }
 }

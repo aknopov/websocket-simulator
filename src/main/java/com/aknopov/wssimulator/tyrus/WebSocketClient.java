@@ -12,6 +12,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import org.glassfish.tyrus.client.ClientManager;
+import org.glassfish.tyrus.client.ClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,6 +81,8 @@ public class WebSocketClient {
         logger.debug("Starting WS client");
 
         ClientManager client = ClientManager.createClient();
+        // As per https://eclipse-ee4j.github.io/tyrus-project.github.io/documentation/latest/index/tyrus-proprietary-config.html#d0e1375
+        client.getProperties().put(ClientProperties.SHARED_CONTAINER_IDLE_TIMEOUT, 30);
         endpoint = new WebSocketEndpoint(eventListener);
         try {
             // We get session through WebSocketEndpoint

@@ -14,11 +14,4 @@ class TimeoutExceptionTest {
         assertInstanceOf(RuntimeException.class, exception);
         assertEquals("Explanation", exception.getMessage());
     }
-
-    @Test
-    void testStringify() {
-        TimeoutException exception = new TimeoutException("Explanation");
-
-        assertTrue(exception.stringify().startsWith("com.aknopov.wssimulator.TimeoutException: Explanation"));
-    }
 }

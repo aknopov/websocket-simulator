@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,17 +23,20 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class WebSocketSimulatorBaseTest {
     private static final String TEXT_MESSAGE = "Hello!";
     private static final ByteBuffer BINARY_MESSAGE =
             ByteBuffer.wrap("Binary message".getBytes(StandardCharsets.UTF_8));
+    private static final TextWebSocketMessage WRAPPED_TEXT = new TextWebSocketMessage(TEXT_MESSAGE);
     private static final Duration TEST_WAIT = Duration.ofMillis(200);
 
     private static class TestWebSocketSimulator extends WebSocketSimulatorBase {
@@ -55,10 +59,22 @@ class WebSocketSimulatorBaseTest {
     }
 
     @Test
+    void testSettingEndpointOnOpen() {
+        simulator.sendMessage(WRAPPED_TEXT);
+        verifyNoInteractions(mockEndpoint);
+        assertEquals(1, simulator.getErrors().size());
+
+        simulator.onOpen(mockEndpoint, Map.of());
+        simulator.sendMessage(WRAPPED_TEXT);
+        verify(mockEndpoint).sendTextMessage(TEXT_MESSAGE);
+        assertEquals(1, simulator.getErrors().size());
+    }
+
+    @Test
     void testSendTextMessage() {
         simulator.setEndpoint(mockEndpoint);
 
-        simulator.sendMessage(new TextWebSocketMessage(TEXT_MESSAGE));
+        simulator.sendMessage(WRAPPED_TEXT);
 
         verify(mockEndpoint).sendTextMessage(TEXT_MESSAGE);
         List<Event> events = simulator.getHistory();
@@ -66,7 +82,6 @@ class WebSocketSimulatorBaseTest {
         assertEquals(EventType.SEND_MESSAGE, events.get(0).eventType());
         assertEquals(TEXT_MESSAGE, events.get(0).description());
     }
-
 
     @Test
     void testSendBinaryMessage() {
@@ -78,7 +93,7 @@ class WebSocketSimulatorBaseTest {
         List<Event> events = simulator.getHistory();
         assertEquals(1, events.size());
         assertEquals(EventType.SEND_MESSAGE, events.get(0).eventType());
-        assertEquals("Binary, len=" + BINARY_MESSAGE.remaining(), events.get(0).description());
+        assertEquals("Binary, len=" + BINARY_MESSAGE.limit(), events.get(0).description());
     }
 
     @Test
@@ -87,7 +102,7 @@ class WebSocketSimulatorBaseTest {
         doThrow(UncheckedIOException.class).when(mockEndpoint).sendBinaryMessage(any(ByteBuffer.class));
         simulator.setEndpoint(mockEndpoint);
 
-        simulator.sendMessage(new TextWebSocketMessage(TEXT_MESSAGE));
+        simulator.sendMessage(WRAPPED_TEXT);
         simulator.sendMessage(new BinaryWebSocketMessage(BINARY_MESSAGE));
 
         List<Event> errors = simulator.getErrors();

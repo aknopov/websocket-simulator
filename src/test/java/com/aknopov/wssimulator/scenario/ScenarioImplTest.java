@@ -39,7 +39,6 @@ class ScenarioImplTest {
             EventType.RECEIVE_MESSAGE,
             EventType.ACTION,
             EventType.SEND_MESSAGE,
-            EventType.IO_ERROR,
             EventType.WAIT,
             EventType.DO_CLOSE,
             EventType.CLOSED
@@ -67,7 +66,6 @@ class ScenarioImplTest {
                 .expectMessage(this::validateText, TEST_DURATION)
                 .perform(() -> {}, TEST_DURATION)
                 .sendMessage(ByteBuffer.wrap("Hello".getBytes(StandardCharsets.UTF_8)), TEST_DURATION)
-                .expectIoError(Throwable::getCause, TEST_DURATION)
                 .wait(TEST_DURATION)
                 .closeConnection(CloseReason.CloseCodes.PROTOCOL_ERROR, TEST_DURATION)
                 .expectConnectionClosed(this::validateCloseReason, TEST_DURATION);

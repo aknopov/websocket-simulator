@@ -51,8 +51,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             EventType.UPGRADE, new ResettableLock<>(ProtocolUpgrade.class),
             EventType.OPEN, new ResettableLock<>(SimulatorEndpoint.class),
             EventType.CLOSED, new ResettableLock<>(CloseCode.class),
-            EventType.RECEIVE_MESSAGE, new ResettableLock<>(WebSocketMessage.class),
-            EventType.IO_ERROR, new ResettableLock<>(Throwable.class));
+            EventType.RECEIVE_MESSAGE, new ResettableLock<>(WebSocketMessage.class));
 
     protected WebSocketSimulatorBase(String threadName) {
         this.scenarioThread = new Thread(this::playScenario, threadName);
@@ -87,7 +86,6 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendTextMessage(String message) {
-        logger.debug("Request to send text '{}'", message);
         try {
             requireNonNull(endpoint).sendTextMessage(message);
             history.addEvent(Event.create(EventType.SEND_MESSAGE, message));
@@ -101,7 +99,6 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     }
 
     private void sendBinaryMessage(ByteBuffer message) {
-        logger.debug("Request to send binary message with {} bytes", message.remaining());
         try {
             requireNonNull(endpoint).sendBinaryMessage(message);
             history.addEvent(Event.create(EventType.SEND_MESSAGE, "Binary, len=" + message.remaining()));
@@ -171,7 +168,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             }
         }
         catch (ScenarioInterruptedException ex) {
-            recordError("Scenario run has been interrupted: " + ex.stringify());
+            recordError("Scenario run has been interrupted: " + Utils.stringify(ex));
         }
         finally {
             scenario.markCompletion();
@@ -185,19 +182,15 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 consumeData(act, protoUpgrade);
             });
             case OPEN -> process(() -> {
-                this.endpoint = waitFor(act, SimulatorEndpoint.class);
+                waitFor(act, SimulatorEndpoint.class); // endpoint is already set
             });
-            case CLOSED -> {
+            case CLOSED -> process(() -> {
                 CloseCode code = waitFor(act, CloseCode.class);
                 consumeData(act, code);
-            }
+            });
             case RECEIVE_MESSAGE -> process(() -> {
                 WebSocketMessage message = waitFor(act, WebSocketMessage.class);
                 consumeData(act, message);
-            });
-            case IO_ERROR -> process(() -> {
-                Throwable error = waitFor(act, Throwable.class);
-                consumeData(act, error);
             });
             case SEND_MESSAGE -> process(() -> {
                 wait(act.delay());
@@ -233,7 +226,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             recordError("NPE at " + Arrays.toString(ex.getStackTrace()));
         }
         catch (TimeoutException ex) {
-            recordError(ex.getMessage() + ": " + ex.stringify());
+            recordError(ex.getMessage() + ": " + Utils.stringify(ex));
         }
         catch (ValidationException ex) {
             recordError("Expectation wasn't fulfilled: " + ex.getMessage());
@@ -295,6 +288,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
 
     @Override
     public void onOpen(SimulatorEndpoint endpoint, Map<String, Object> context) {
+        this.endpoint = endpoint;
         releaseEvent(EventType.OPEN, endpoint);
     }
 
@@ -305,7 +299,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
 
     @Override
     public void onError(Throwable error) {
-        releaseEvent(EventType.IO_ERROR, error);
+        // Nothing
     }
 
     @Override

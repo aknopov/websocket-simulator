@@ -76,15 +76,6 @@ public interface Scenario extends Iterable<Act<?>> {
     Scenario closeConnection(CloseCode closeCode, Duration initialDelay);
 
     /**
-     * Adds an act to scenario to expect IO error.
-     *
-     * @param validator error validator
-     * @param waitPeriod wait period to receive the error
-     * @return this instance
-     */
-    Scenario expectIoError(Consumer<Throwable> validator, Duration waitPeriod); //TODO dubious - needs test
-
-    /**
      * Adds an act to scenario queue to perform arbitrary functionality.
      *
      * @param runnable code to run

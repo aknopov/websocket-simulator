@@ -8,11 +8,9 @@ import org.mockito.MockedConstruction;
 
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
-import com.aknopov.wssimulator.simulator.WebSocketClientSimulator;
 import com.aknopov.wssimulator.tyrus.WebSocketClient;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;

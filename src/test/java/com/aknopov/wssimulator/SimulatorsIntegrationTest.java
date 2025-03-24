@@ -4,8 +4,8 @@ import java.net.http.HttpHeaders;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -21,6 +21,7 @@ import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.CloseReason.CloseCodes;
 
 import static com.aknopov.wssimulator.simulator.WebSocketServerSimulator.DYNAMIC_PORT;
+import static java.util.function.Predicate.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,7 +54,7 @@ public class SimulatorsIntegrationTest {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         serverSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
-                .expectConnectionOpened(ACTION_WAIT)
+                // can be skipped - .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .wait(Duration.ZERO)
                 .sendMessage(SERVER_RESPONSE_1, SHORT_WAIT)
@@ -73,8 +74,8 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
-        assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator.hasErrors());
     }
 
     @Test
@@ -83,8 +84,7 @@ public class SimulatorsIntegrationTest {
         serverSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
-                .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT)
-                .perform(() -> System.out.println("** All is done **"), Duration.ZERO);
+                .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
         serverSimulator.start();
 
         String url = "ws://localhost:" + serverSimulator.getPort() + A_PATH;
@@ -99,13 +99,12 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
-        assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator.hasErrors());
     }
 
     @Test
-    void testClientReconnect() throws Exception {
-        CountDownLatch intermission = new CountDownLatch(1);
+    void testClientReconnect() {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
         serverSimulator.getScenario()
                 // act 1
@@ -114,8 +113,6 @@ public class SimulatorsIntegrationTest {
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
                 .closeConnection(CloseCodes.GOING_AWAY, SHORT_WAIT)
-                // intermission
-                .perform(intermission::countDown, SHORT_WAIT)
                 // act 2
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
@@ -139,15 +136,16 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
 
         clientSimulator1.start();
-        intermission.await(ACTION_WAIT.toSeconds(), TimeUnit.SECONDS);
-        clientSimulator2.start();
+        assertTrue(clientSimulator1.awaitScenarioCompletion(ACTION_WAIT));
 
+        clientSimulator2.start();
         assertTrue(clientSimulator2.awaitScenarioCompletion(LONG_WAIT));
+
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
-        assertFalse(clientSimulator1.hasErrors(), "Client 1 errors: " + clientSimulator1.getErrors());
-        assertFalse(clientSimulator2.hasErrors(), "Client 2 errors: " + clientSimulator2.getErrors());
+        assertFalse(serverSimulator.hasErrors());
+        assertFalse(clientSimulator1.hasErrors());
+        assertFalse(clientSimulator2.hasErrors());
     }
 
     @Test
@@ -213,7 +211,7 @@ public class SimulatorsIntegrationTest {
     // Assuming authentication is done in handshake handler...
     private void validateUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
         int status = protocolUpgrade.status();
-        boolean hasAuthHeader = protocolUpgrade.reqHeaders().containsKey("Authorization");
+        boolean hasAuthHeader = protocolUpgrade.reqHeaders().containsKey(AUTH_HEADER);
 
         if ( !(hasAuthHeader && status == ProtocolUpgrade.SWITCH_SUCCESS_CODE
            || !hasAuthHeader && status == UNAUTHORIZED_CODE)) {
@@ -224,18 +222,26 @@ public class SimulatorsIntegrationTest {
         protocolUpgrade.respHeaders().put("WWW-Authenticate", List.of("Bearer realm=\"Protected Area\""));
     }
 
+    private static final Set<String> EXPECTED_CLIENT_HEADERS = Set.of(AUTH_HEADER, "Sec-Websocket-Key");
+    private static final Set<String> EXPECTED_SERVER_HEADERS = Set.of("Connection", "Sec-Websocket-Accept", "WWW-Authenticate");
+
     // Client side validator has only headers - checking some of them
     private void validateClientUpgradeWithAuth(ProtocolUpgrade protocolUpgrade) {
         Map<String, List<String>> allRequestHeaders = protocolUpgrade.reqHeaders();
         Map<String, List<String>> allResponseHeaders = protocolUpgrade.respHeaders();
-        if (!allRequestHeaders.containsKey(AUTH_HEADER)
-         || !allRequestHeaders.containsKey("Sec-WebSocket-Key")
-         || !allResponseHeaders.containsKey("Connection")
-         || !allResponseHeaders.containsKey("Sec-Websocket-Accept")
-         || !allResponseHeaders.containsKey("WWW-Authenticate")
-        ) {
+
+        Set<String> missedClientHeaders = insensitveDiff(EXPECTED_CLIENT_HEADERS, allRequestHeaders.keySet());
+        Set<String> missedServerHeaders = insensitveDiff(EXPECTED_SERVER_HEADERS, allResponseHeaders.keySet());
+        if (!missedClientHeaders.isEmpty() || !missedServerHeaders.isEmpty()) {
             throw new ValidationException(
-                    "Improper headers in client handshake: some mandatory headers are missing");
+                    "Missing headers in client handshake: " + missedClientHeaders + " and " + missedServerHeaders);
         }
+    }
+
+    // Case-insensitive
+    Set<String> insensitveDiff(Set<String> set1, Set<String> set2) {
+        Set<String> iSet1 = set1.stream().map(String::toLowerCase).collect(Collectors.toSet());
+        Set<String> iSet2 = set2.stream().map(String::toLowerCase).collect(Collectors.toSet());
+        return iSet1.stream().filter(not(iSet2::contains)).collect(Collectors.toSet());
     }
 }

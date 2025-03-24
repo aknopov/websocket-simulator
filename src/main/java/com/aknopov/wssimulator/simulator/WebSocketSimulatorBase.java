@@ -3,11 +3,15 @@ package com.aknopov.wssimulator.simulator;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.Nullable;
 
@@ -35,12 +39,17 @@ import com.aknopov.wssimulator.message.WebSocketMessage;
 import jakarta.websocket.CloseReason.CloseCode;
 
 import static com.aknopov.wssimulator.Utils.requireNonNull;
+import static java.util.function.Predicate.not;
 
 /**
  * Common functionality of client and server simulators
  */
 public abstract class WebSocketSimulatorBase implements WebSocketSimulator, EventListener {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketSimulatorBase.class);
+
+    private static final Set<EventType> IGNORED_EVENTS = Set.of(EventType.STARTED, EventType.ERROR);
+    private static final Set<EventType> MATCHING_EVENTS = Arrays.stream(EventType.values()).filter(not(IGNORED_EVENTS::contains))
+            .collect(Collectors.toSet());
 
     protected final History history = new History();
     protected final Scenario scenario = new ScenarioImpl();
@@ -52,6 +61,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
             EventType.OPEN, new ResettableLock<>(SimulatorEndpoint.class),
             EventType.CLOSED, new ResettableLock<>(CloseCode.class),
             EventType.RECEIVE_MESSAGE, new ResettableLock<>(WebSocketMessage.class));
+    private final List<EventType> expectedEvents = new ArrayList<>();
 
     protected WebSocketSimulatorBase(String threadName) {
         this.scenarioThread = new Thread(this::playScenario, threadName);
@@ -124,6 +134,26 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
                 .toList();
     }
 
+    @Override
+    public boolean noMoreEvents() {
+        if (!scenario.isDone()) {
+            List<EventType> remainedActs = StreamSupport.stream(scenario.spliterator(), false)
+                    .map(Act::eventType)
+                    .toList();
+            recordError("Scenario hasn't been completed. Remained acts: " + remainedActs);
+            return false;
+        }
+
+        List<EventType> expectedFiltered = expectedEvents.stream().filter(MATCHING_EVENTS::contains).toList();
+        List<EventType> actualFiltered = getHistory().stream().map(Event::eventType).filter(MATCHING_EVENTS::contains).toList();
+        if (!expectedFiltered.equals(actualFiltered)) {
+            recordError(String.format("Scenario doesn't match actual events.%nExpected: %s%nActual: %s",
+                    expectedFiltered, getHistory().stream().filter(e -> MATCHING_EVENTS.contains(e.eventType())).toList()));
+            return false;
+        }
+        return true;
+    }
+
     protected void recordError(String message) {
         history.addEvent(Event.error(message));
     }
@@ -164,6 +194,7 @@ public abstract class WebSocketSimulatorBase implements WebSocketSimulator, Even
     private void playScenario() {
         try {
             for (Act<?> act: scenario) {
+                expectedEvents.add(act.eventType());
                 playOneAct(act);
             }
         }

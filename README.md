@@ -100,9 +100,11 @@ See examples in [ProxyIntegrationTest.java](src%2Ftest%2Fjava%2Fcom%2Faknopov%2F
 - `ValidationException` - exception thrown when validation fails.
 - `Event` - result of execution scenario act or validation. Contains event type (including `ERROR`) and optional description.
 - Simulator records all scenario acts, validation and timeout failures.
-  Full list of events is available with `WebSocketSimulator::getHistory()` call.
-- List of errors can be filtered from other events with call of `WebSocketSimulator::getErrors`.
-  Simple check for errors can be done with `WebSocketSimulator::hasErrors`.
+  Full list of events is available with `WebSocketSimulator.getHistory()` call.
+- List of errors can be filtered from other events with call of `WebSocketSimulator.getErrors()`.
+  Simple check for errors can be done with `WebSocketSimulator.hasErrors()`.
+- You can check if simulator encountered events other than expected in scenario by using `WebSocketSimulator.noMoreEvents()` call.
+  In case of mismatch, list of errors contains and entry with more details.
 - `Scenario::perform` method can be used to create control points in scenario timeline. For example -
 ```java
 CountDownLatch controlPoint = new CountDownLatch(1);

@@ -74,6 +74,9 @@ public class SimulatorsIntegrationTest {
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
+        assertTrue(serverSimulator.noMoreEvents());
+        assertTrue(clientSimulator.noMoreEvents());
+
         assertFalse(serverSimulator.hasErrors());
         assertFalse(clientSimulator.hasErrors());
     }

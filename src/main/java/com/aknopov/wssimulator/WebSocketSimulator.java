@@ -86,4 +86,12 @@ public interface WebSocketSimulator {
      * @return the list
      */
     List<Event> getErrors();
+
+    /**
+     * Checks that simulator didn't encounter any events outside its scenario.<p/>
+     * Details of mismatched events can be obtained with {@link WebSocketSimulator#getErrors()}
+     *
+     * @return check result
+     */
+    boolean noMoreEvents();
 }

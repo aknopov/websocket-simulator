@@ -15,11 +15,14 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 
 import com.aknopov.wssimulator.SocketFactory;
 import com.aknopov.wssimulator.Utils;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,6 +34,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -67,6 +71,18 @@ class TcpProxyTest {
         when(mockSocketUp.getOutputStream()).thenReturn(mockOutStreamUp);
         when(mockSocketDown.getInputStream()).thenReturn(mockInStreamDown);
         when(mockSocketDown.getOutputStream()).thenReturn(mockOutStreamDown);
+    }
+
+    @Test
+    void testPublicFactoryMethods() {
+        try (MockedConstruction<SocketFactory> clientMockClass = mockConstruction(SocketFactory.class)) {
+            TcpProxy ignored1 = TcpProxy.createNonToxicProxy(PROXY_CONFIG);
+            TcpProxy ignored2 = TcpProxy.createJitterProxy(PROXY_CONFIG, ACCEPT_PAUSE, SHORT_PAUSE, Duration.ZERO);
+            TcpProxy ignored3 = TcpProxy.createInterruptingProxy(PROXY_CONFIG, ACCEPT_PAUSE);
+            TcpProxy ignored4 = TcpProxy.createSlicerProxy(PROXY_CONFIG, 64, ACCEPT_PAUSE);
+
+            assertThat(clientMockClass.constructed(), hasSize(4));
+        }
     }
 
     @Test

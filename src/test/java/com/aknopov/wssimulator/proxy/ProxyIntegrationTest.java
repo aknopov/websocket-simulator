@@ -49,7 +49,7 @@ public class ProxyIntegrationTest {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SERVER_CONFIG, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
-        TcpProxy proxy = TcpProxy.createNonToxicProxy(proxyConfig, new SocketFactory());
+        TcpProxy proxy = TcpProxy.createNonToxicProxy(proxyConfig);
 
         configureScenarios(serverSimulator, clientSimulator, 1);
 
@@ -70,8 +70,8 @@ public class ProxyIntegrationTest {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SERVER_CONFIG, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
-        TcpProxy proxy = TcpProxy.createInterruptingProxy(proxyConfig, new SocketFactory(),
-                SHORT_WAIT.multipliedBy(PING_PONG_COUNT / 2));
+        TcpProxy proxy = TcpProxy.createInterruptingProxy(proxyConfig, SHORT_WAIT.multipliedBy(PING_PONG_COUNT / 2),
+                new SocketFactory());
 
         configureScenarios(serverSimulator, clientSimulator, PING_PONG_COUNT);
 
@@ -98,8 +98,8 @@ public class ProxyIntegrationTest {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
-        TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, new SocketFactory(),
-                Duration.ZERO, Duration.ofMillis(50), Duration.ofMillis(10));
+        TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, Duration.ZERO, Duration.ofMillis(50),
+                Duration.ofMillis(10), new SocketFactory());
 
         configureScenarios(serverSimulator, clientSimulator, PING_PONG_COUNT);
 
@@ -123,8 +123,8 @@ public class ProxyIntegrationTest {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
-        TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, new SocketFactory(),
-                Duration.ZERO, Duration.ofMillis(200), Duration.ofMillis(200));
+        TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, Duration.ZERO, Duration.ofMillis(200),
+                Duration.ofMillis(200), new SocketFactory());
 
         configureScenarios(serverSimulator, clientSimulator, PING_PONG_COUNT);
 
@@ -146,7 +146,7 @@ public class ProxyIntegrationTest {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
-        TcpProxy proxy = TcpProxy.createSlicerProxy(proxyConfig, new SocketFactory(), 32, Duration.ofMillis(50));
+        TcpProxy proxy = TcpProxy.createSlicerProxy(proxyConfig, 32, Duration.ofMillis(50), new SocketFactory());
 
         configureScenarios(serverSimulator, clientSimulator, PING_PONG_COUNT);
 

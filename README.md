@@ -78,6 +78,18 @@ void testServerBehavior() throws Exception {
     assertFalse(clientSimulator.hasErrors());
 }
 ```
+
+## Simulating noise in WebSocket scenarios
+
+The library contains TCP proxy that can distort communications between simulator and client/server.
+There are several "poisons" that proxy can be configured with. Proxies can be created with factory methods 
+- `TcpProxy.createNonToxicProxy()` - noop proxy
+- `TcpProxy.createInterruptingProxy()` - shuts down connection with "RST" flag after some time
+- `TcpProxy.createJitterProxy()` - delays TCP packets with random latency
+- `TcpProxy.createSlicerProxy()` - splits TCP packets to smaller fragments with random delay 
+
+See examples in [ProxyIntegrationTest.java](src%2Ftest%2Fjava%2Fcom%2Faknopov%2Fwssimulator%2Fproxy%2F/ProxyIntegrationTest.java).
+
 ## Notes
 - <ins>Server simulator does not allow multiple connections.</ins> Scenario is "played" sequentially in a dedicated thread
   called "ClientSimulator" or "ServerSimulator". 

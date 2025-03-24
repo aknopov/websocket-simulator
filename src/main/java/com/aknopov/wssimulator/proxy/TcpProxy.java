@@ -49,10 +49,14 @@ public class TcpProxy implements Interruptible {
      * Creates not intoxicated proxy with configuration and socket factory
      *
      * @param proxyConfig proxy config
-     * @param socketFactory socket factory
      * @return proxy without toxic
      */
-    public static TcpProxy createNonToxicProxy(ProxyConfig proxyConfig, SocketFactory socketFactory) {
+    public static TcpProxy createNonToxicProxy(ProxyConfig proxyConfig) {
+        return new TcpProxy(proxyConfig, new SocketFactory(), new ToxicNoop());
+    }
+
+    // VisibleForTesting
+    static TcpProxy createNonToxicProxy(ProxyConfig proxyConfig, SocketFactory socketFactory) {
         return new TcpProxy(proxyConfig, socketFactory, new ToxicNoop());
     }
 
@@ -60,14 +64,19 @@ public class TcpProxy implements Interruptible {
      * Creates proxy that delays data exchange with specified parameters
      *
      * @param proxyConfig proxy config
-     * @param socketFactory socket factory
      * @param startTime interval since proxy start to delay data transmission
      * @param latency average latency
      * @param jitter latency variance
      * @return proxy with toxic latency
      */
-    public static TcpProxy createJitterProxy(ProxyConfig proxyConfig, SocketFactory socketFactory,
+    public static TcpProxy createJitterProxy(ProxyConfig proxyConfig,
             Duration startTime, Duration latency, Duration jitter) {
+        return createJitterProxy(proxyConfig, startTime, latency, jitter, new SocketFactory());
+    }
+
+    // VisibleForTesting
+    static TcpProxy createJitterProxy(ProxyConfig proxyConfig, Duration startTime, Duration latency, Duration jitter,
+            SocketFactory socketFactory) {
         return new TcpProxy(proxyConfig, socketFactory, new ToxicLatency(startTime, latency, jitter));
     }
 
@@ -75,11 +84,16 @@ public class TcpProxy implements Interruptible {
      * Creates proxy that interrupts connection at some point.
      *
      * @param proxyConfig proxy config
-     * @param socketFactory socket factory
      * @param interruptTime interval sine start to interrupt connection
      * @return proxy that interrupts connection
      */
-    public static TcpProxy createInterruptingProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, Duration interruptTime) {
+    public static TcpProxy createInterruptingProxy(ProxyConfig proxyConfig, Duration interruptTime) {
+        return createInterruptingProxy(proxyConfig, interruptTime, new SocketFactory());
+    }
+
+    // VisibleForTesting
+    static TcpProxy createInterruptingProxy(ProxyConfig proxyConfig, Duration interruptTime,
+            SocketFactory socketFactory) {
         return new TcpProxy(proxyConfig, socketFactory, interruptTime);
     }
 
@@ -87,12 +101,17 @@ public class TcpProxy implements Interruptible {
      * Creates proxy that slices data in smaller pieces
      *
      * @param proxyConfig proxy config
-     * @param socketFactory socket factory
      * @param sliceSize average size of sliced packets (max is twice larger)
      * @param delay maximum random delay before providing sliced packets
      * @return slicing proxy
      */
-    public static TcpProxy createSlicerProxy(ProxyConfig proxyConfig, SocketFactory socketFactory, int sliceSize, Duration delay) {
+    public static TcpProxy createSlicerProxy(ProxyConfig proxyConfig, int sliceSize, Duration delay) {
+        return createSlicerProxy(proxyConfig, sliceSize, delay, new SocketFactory());
+    }
+
+    // VisibleForTesting
+    static TcpProxy createSlicerProxy(ProxyConfig proxyConfig, int sliceSize, Duration delay,
+            SocketFactory socketFactory) {
         return new TcpProxy(proxyConfig, socketFactory, new ToxicSlicer(delay, sliceSize));
     }
 

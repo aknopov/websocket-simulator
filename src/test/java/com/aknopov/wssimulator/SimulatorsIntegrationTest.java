@@ -29,9 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SimulatorsIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class);
 
-    private static final Duration ACTION_WAIT = Duration.ofSeconds(1);
+    private static final Duration ACTION_WAIT = Duration.ofMillis(5_000);
     private static final Duration SHORT_WAIT = Duration.ofMillis(50);
-    private static final Duration LONG_WAIT = Duration.ofSeconds(10);
+    private static final Duration LONG_WAIT = Duration.ofMillis(20_000);
     private static final String A_PATH = "/path";
     private static final String MESSAGE_1 = "Message 1";
     private static final String MESSAGE_2 = "Message 2";

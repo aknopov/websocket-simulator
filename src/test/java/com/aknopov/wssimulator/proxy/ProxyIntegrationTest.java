@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ProxyIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(ProxyIntegrationTest.class);
 
-    private static final Duration ACTION_WAIT = Duration.ofMillis(2_000);
+    private static final Duration ACTION_WAIT = Duration.ofMillis(1_000);
     private static final Duration SHORT_WAIT = Duration.ofMillis(50);
     private static final Duration LONG_WAIT = Duration.ofMillis(10_000);
     private static final int PING_PONG_COUNT = 6;

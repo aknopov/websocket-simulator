@@ -9,7 +9,7 @@ import org.mockito.MockedConstruction;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
-import com.aknopov.wssimulator.tyrus.WebSocketClient;
+import com.aknopov.wssimulator.jetty.WebSocketClient;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

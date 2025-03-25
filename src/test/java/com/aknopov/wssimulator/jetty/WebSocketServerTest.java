@@ -1,7 +1,6 @@
-package com.aknopov.wssimulator.tyrus;
+package com.aknopov.wssimulator.jetty;
 
 import java.time.Duration;
-import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class WebSocketServerTest extends BaseTest {
 
-    private WebSocketServer server = new WebSocketServer("localhost", "/", Map.of());
+    private WebSocketServer server = new WebSocketServer("localhost", "/", SESSION_CONFIG);
 
     @AfterEach
     void cleanUp() {
@@ -24,7 +23,7 @@ class WebSocketServerTest extends BaseTest {
         int port1 = server.getPort();
         server.stop();
 
-        server = new WebSocketServer("localhost", "/", Map.of());
+        server = new WebSocketServer("localhost", "/", SESSION_CONFIG);
         server.start();
         server.waitForStart(Duration.ofSeconds(1));
         int port2 = server.getPort();
@@ -37,6 +36,15 @@ class WebSocketServerTest extends BaseTest {
         server.start();
         assertFalse(server.waitForStart(Duration.ofNanos(10000)));
         assertTrue(server.waitForStart(Duration.ofSeconds(1)));
+    }
+
+    @Test
+    void testForStop() {
+        server.start();
+        assertFalse(server.waitForStop(Duration.ofNanos(10000)));
+        server.stop();
+        assertFalse(server.waitForStop(Duration.ofNanos(10000)));
+        assertTrue(server.waitForStop(Duration.ofSeconds(1)));
     }
 
     @Test

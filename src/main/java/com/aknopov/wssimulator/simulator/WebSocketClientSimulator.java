@@ -7,7 +7,7 @@ import java.time.Duration;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
-import com.aknopov.wssimulator.tyrus.WebSocketClient;
+import com.aknopov.wssimulator.jetty.WebSocketClient;
 
 /**
  * Implementation of WebSocketSimulator for the client

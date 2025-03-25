@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator.tyrus;
+package com.aknopov.wssimulator.jetty;
 
 import org.junit.jupiter.api.Test;
 
@@ -7,15 +7,13 @@ import com.aknopov.wssimulator.SimulatorEndpoint;
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.Session;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 class WebSocketEndpointTest extends BaseTest {
-
     @Test
     void testCreation() {
         WebSocketEndpoint serverEndpoint = new WebSocketEndpoint();

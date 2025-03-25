@@ -1,13 +1,13 @@
-package com.aknopov.wssimulator.tyrus;
+package com.aknopov.wssimulator.jetty;
 
+import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.glassfish.tyrus.core.TyrusUpgradeResponse;
-import org.glassfish.tyrus.server.Server;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.websocket.jakarta.server.config.JakartaWebSocketServletContainerInitializer;
+import org.eclipse.jetty.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,11 +15,8 @@ import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.injection.ServiceLocator;
-import jakarta.websocket.DeploymentException;
-import jakarta.websocket.Endpoint;
 import jakarta.websocket.HandshakeResponse;
 import jakarta.websocket.server.HandshakeRequest;
-import jakarta.websocket.server.ServerApplicationConfig;
 import jakarta.websocket.server.ServerEndpointConfig;
 
 import static com.aknopov.wssimulator.SocketFactory.getAvailablePort;
@@ -32,6 +29,8 @@ public class WebSocketServer {
 
     private final int port;
     private final Server server;
+    private final String path;
+    private final SessionConfig sessionConfig;
     private final CountDownLatch started;
     private final CountDownLatch stopRequested;
     private final CountDownLatch stopped;
@@ -41,12 +40,14 @@ public class WebSocketServer {
      *
      * @param host host name
      * @param path root path
-     * @param properties Tyrus server configuration properties
+     * @param sessionConfig Server configuration properties
      * @param port port to run on
      */
-    public WebSocketServer(String host, String path, Map<String, Object> properties, int port) {
+    public WebSocketServer(String host, String path, SessionConfig sessionConfig, int port) {
         this.port = port;
-        this.server = new Server(host, port, path, properties, MyServerApplicationConfig.class);
+        this.server = new Server(new InetSocketAddress(host, port));
+        this.path = path;
+        this.sessionConfig = sessionConfig;
         this.started = new CountDownLatch(1);
         this.stopRequested = new CountDownLatch(1);
         this.stopped = new CountDownLatch(1);
@@ -54,14 +55,15 @@ public class WebSocketServer {
     }
 
     /**
-     * Creates server instant that will be run on some available port (see <a href="com.aknopov.wssimulator.tyrus.WebSocketServer#getPort()">getPort</a>).
+     * Creates server instant that will be run on some available port (see <a
+     * href="com.aknopov.wssimulator.jetty.WebSocketServer#getPort()">getPort</a>).
      *
      * @param host host name
      * @param path root path
-     * @param properties Tyrus server configuration properties
+     * @param sessionConfig Session configuration properties
      */
-    public WebSocketServer(String host, String path, Map<String, Object> properties) {
-        this(host, path, properties, getAvailablePort());
+    public WebSocketServer(String host, String path, SessionConfig sessionConfig) {
+        this(host, path, sessionConfig, getAvailablePort());
     }
 
     /**
@@ -98,7 +100,7 @@ public class WebSocketServer {
     /**
      * Waits till server starts.
      *
-     * @param waitDuration maximum period to wait for start
+     * @param waitDuration maximum period to wait start
      * @return {@code true} if server started before expiry
      */
     public boolean waitForStart(Duration waitDuration) {
@@ -111,12 +113,6 @@ public class WebSocketServer {
         return false;
     }
 
-    /**
-     * Waits till server stops.
-     *
-     * @param waitDuration maximum period to wait for stop
-     * @return {@code true} if server stopped before expiry
-     */
     public boolean waitForStop(Duration waitDuration) {
         try {
             return stopped.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
@@ -128,44 +124,34 @@ public class WebSocketServer {
     }
 
     private void runServer() {
+        ServletContextHandler handler = new ServletContextHandler(path);
+        server.setHandler(handler);
+
+        EventListener eventListener = ServiceLocator.findOrCreate(EventListener.class);
+
+        JakartaWebSocketServletContainerInitializer.configure(handler, (context, container) -> {
+            ServerEndpointConfig endpointConfig =
+                    ServerEndpointConfig.Builder.create(WebSocketEndpoint.class, sessionConfig.contextPath())
+                            .configurator(new ServerEndpointConfigurator(eventListener))
+                            .build();
+            container.setDefaultMaxTextMessageBufferSize(sessionConfig.bufferSize());
+            container.setDefaultMaxSessionIdleTimeout(sessionConfig.idleTimeout().toMillis());
+            container.addEndpoint(endpointConfig);
+        });
+
         try {
             server.start();
             started.countDown();
             stopRequested.await();
             server.stop();
             stopped.countDown();
-            logger.debug("WS server on port {} stopped", getPort());
-        }
-        catch (DeploymentException e) {
-            logger.error("Can't start server on port {}", server.getPort(), e);
+            logger.debug("WS server stopped");
         }
         catch (InterruptedException e) {
             logger.error("WS server thread interrupted", e);
         }
-    }
-
-    /**
-     * Tyrus requires this class to be public!
-     */
-    public static class MyServerApplicationConfig implements ServerApplicationConfig {
-        private final EventListener eventListener;
-        private final SessionConfig sessionConfig;
-
-        public MyServerApplicationConfig() {
-            eventListener = ServiceLocator.findOrCreate(EventListener.class);
-            sessionConfig = ServiceLocator.findOrCreate(SessionConfig.class);
-        }
-
-        @Override
-        public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> set) {
-            return Set.of(ServerEndpointConfig.Builder.create(WebSocketEndpoint.class, sessionConfig.contextPath())
-                    .configurator(new ServerEndpointConfigurator(eventListener))
-                    .build());
-        }
-
-        @Override
-        public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> set) {
-            return Set.of();
+        catch (Exception e) {
+            logger.error("Can't start server on port {}", getPort(), e);
         }
     }
 
@@ -178,7 +164,7 @@ public class WebSocketServer {
 
         @Override
         public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
-            int status = (response instanceof TyrusUpgradeResponse tyrusResponse) ? tyrusResponse.getStatus() : -1;
+            int status = ProtocolUpgrade.SWITCH_SUCCESS_CODE;
             eventListener.onHandshake(new ProtocolUpgrade(request.getRequestURI(), request.getQueryString(),
                     request.getHeaders(), response.getHeaders(), status));
         }

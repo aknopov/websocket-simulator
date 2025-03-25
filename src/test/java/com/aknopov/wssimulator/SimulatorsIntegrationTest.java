@@ -115,13 +115,13 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
-                .closeConnection(CloseCodes.GOING_AWAY, Duration.ZERO)
+                .closeConnection(CloseCodes.GOING_AWAY, SHORT_WAIT)
                 // act 2
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_2, Duration.ZERO)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         serverSimulator.start();
 
         WebSocketClientSimulator clientSimulator1 =

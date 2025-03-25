@@ -34,7 +34,7 @@ public class ProxyIntegrationTest {
     private static final TextWebSocketMessage PING = new TextWebSocketMessage("ping");
     private static final TextWebSocketMessage PONG = new TextWebSocketMessage("pong");
 
-    private static final SessionConfig SERVER_CONFIG = new SessionConfig(A_PATH);
+    private static final SessionConfig SESSION_CONFIG = new SessionConfig(A_PATH);
     private ProxyConfig proxyConfig;
 
     @BeforeEach
@@ -46,9 +46,9 @@ public class ProxyIntegrationTest {
 
     @Test
     void testProxyingWithoutToxy() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SERVER_CONFIG, proxyConfig.upPort());
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
-        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         TcpProxy proxy = TcpProxy.createNonToxicProxy(proxyConfig);
 
         configureScenarios(serverSimulator, clientSimulator, 1);
@@ -67,9 +67,9 @@ public class ProxyIntegrationTest {
 
     @Test
     void testConnectionInterruption() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SERVER_CONFIG, proxyConfig.upPort());
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
-        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         TcpProxy proxy = TcpProxy.createInterruptingProxy(proxyConfig, SHORT_WAIT.multipliedBy(PING_PONG_COUNT / 2),
                 new SocketFactory());
 
@@ -97,7 +97,7 @@ public class ProxyIntegrationTest {
         SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofSeconds(2), 1024);
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
-        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, Duration.ZERO, Duration.ofMillis(50),
                 Duration.ofMillis(10), new SocketFactory());
 
@@ -122,7 +122,7 @@ public class ProxyIntegrationTest {
         SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofMillis(400), 1024);
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
-        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, Duration.ZERO, Duration.ofMillis(200),
                 Duration.ofMillis(200), new SocketFactory());
 
@@ -145,7 +145,7 @@ public class ProxyIntegrationTest {
         SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofSeconds(1), 1024);
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
-        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         TcpProxy proxy = TcpProxy.createSlicerProxy(proxyConfig, 32, Duration.ofMillis(50), new SocketFactory());
 
         configureScenarios(serverSimulator, clientSimulator, PING_PONG_COUNT);

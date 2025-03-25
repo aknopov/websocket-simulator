@@ -39,19 +39,19 @@ public class SimulatorsIntegrationTest {
     private static final String SERVER_RESPONSE_2 = "All is good";
     private static final int UNAUTHORIZED_CODE = 401;
 
-    private static final SessionConfig config = new SessionConfig(A_PATH);
+    private static final SessionConfig SESSION_CONFIG = new SessionConfig(A_PATH);
     private static final String AUTH_HEADER = "Authorization";
 
     @BeforeAll
     static void logConfig() {
         logger.debug("-------------------------");
-        logger.debug("Test configuration: {}", config);
+        logger.debug("Test configuration: {}", SESSION_CONFIG);
         logger.debug("-------------------------");
     }
 
     @Test
     void testRunningSimulator() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, DYNAMIC_PORT);
         serverSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 // can be skipped - .expectConnectionOpened(ACTION_WAIT)
@@ -63,7 +63,7 @@ public class SimulatorsIntegrationTest {
         serverSimulator.start();
 
         String url = "ws://localhost:" + serverSimulator.getPort() + A_PATH;
-        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url);
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         clientSimulator.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
@@ -83,7 +83,7 @@ public class SimulatorsIntegrationTest {
 
     @Test
     void testAuthentication() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, DYNAMIC_PORT);
         serverSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
@@ -92,7 +92,7 @@ public class SimulatorsIntegrationTest {
 
         String url = "ws://localhost:" + serverSimulator.getPort() + A_PATH;
         HttpHeaders authHeaders = HttpHeaders.of(Map.of(AUTH_HEADER, List.of("token")), (t, u) -> true);
-        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, authHeaders);
+        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG, authHeaders);
         clientSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateClientUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
@@ -108,7 +108,7 @@ public class SimulatorsIntegrationTest {
 
     @Test
     void testClientReconnect() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, DYNAMIC_PORT);
         serverSimulator.getScenario()
                 // act 1
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
@@ -124,14 +124,16 @@ public class SimulatorsIntegrationTest {
                 .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         serverSimulator.start();
 
-        WebSocketClientSimulator clientSimulator1 = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
+        WebSocketClientSimulator clientSimulator1 =
+                new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH, SESSION_CONFIG);
         clientSimulator1.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, Duration.ZERO)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .expectConnectionClosed(this::validateGoingAway, ACTION_WAIT);
 
-        WebSocketClientSimulator clientSimulator2 = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
+        WebSocketClientSimulator clientSimulator2 =
+                new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH, SESSION_CONFIG);
         clientSimulator2.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_2, Duration.ZERO)
@@ -153,7 +155,7 @@ public class SimulatorsIntegrationTest {
 
     @Test
     void testScenarioInterruption() throws Exception {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(config, DYNAMIC_PORT);
+        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, DYNAMIC_PORT);
         Scenario serverScenario = serverSimulator.getScenario();
         // Expect two connections
         for (int i = 0; i < 2; i++) {
@@ -165,7 +167,8 @@ public class SimulatorsIntegrationTest {
         serverSimulator.start();
 
         // Play scenario of the first client only
-        WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH);
+        WebSocketClientSimulator clientSimulator =
+                new WebSocketClientSimulator("ws://localhost:" + serverSimulator.getPort() + A_PATH, SESSION_CONFIG);
         clientSimulator.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)

@@ -25,14 +25,14 @@ public class BaseTest {
     protected static final String TEXT_MESSAGE = "Hello!";
     protected static final ByteBuffer BINARY_MESSAGE =
             ByteBuffer.wrap("Binary message".getBytes(StandardCharsets.UTF_8));
-
+    protected static final SessionConfig
+            SESSION_CONFIG = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
 
     protected final TestEventListener serverListener = new TestEventListener();
-    protected static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
 
     @BeforeEach
     protected void initInjection() {
-        ServiceLocator.init(config, serverListener);
+        ServiceLocator.init(SESSION_CONFIG, serverListener);
     }
 
     protected static class TestEventListener implements EventListener {

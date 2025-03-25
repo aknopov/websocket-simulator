@@ -29,9 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SimulatorsIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class);
 
-    private static final Duration ACTION_WAIT = Duration.ofMillis(5_000);
+    private static final Duration ACTION_WAIT = Duration.ofMillis(1_000);
     private static final Duration SHORT_WAIT = Duration.ofMillis(50);
-    private static final Duration LONG_WAIT = Duration.ofMillis(20_000);
+    private static final Duration LONG_WAIT = Duration.ofMillis(10_000);
     private static final String A_PATH = "/path";
     private static final String MESSAGE_1 = "Message 1";
     private static final String MESSAGE_2 = "Message 2";
@@ -236,8 +236,8 @@ public class SimulatorsIntegrationTest {
         Map<String, List<String>> allRequestHeaders = protocolUpgrade.reqHeaders();
         Map<String, List<String>> allResponseHeaders = protocolUpgrade.respHeaders();
 
-        Set<String> missedClientHeaders = insensitveDiff(EXPECTED_CLIENT_HEADERS, allRequestHeaders.keySet());
-        Set<String> missedServerHeaders = insensitveDiff(EXPECTED_SERVER_HEADERS, allResponseHeaders.keySet());
+        Set<String> missedClientHeaders = insensitiveDiff(EXPECTED_CLIENT_HEADERS, allRequestHeaders.keySet());
+        Set<String> missedServerHeaders = insensitiveDiff(EXPECTED_SERVER_HEADERS, allResponseHeaders.keySet());
         if (!missedClientHeaders.isEmpty() || !missedServerHeaders.isEmpty()) {
             throw new ValidationException(
                     "Missing headers in client handshake: " + missedClientHeaders + " and " + missedServerHeaders);
@@ -245,7 +245,7 @@ public class SimulatorsIntegrationTest {
     }
 
     // Case-insensitive
-    Set<String> insensitveDiff(Set<String> set1, Set<String> set2) {
+    Set<String> insensitiveDiff(Set<String> set1, Set<String> set2) {
         Set<String> iSet1 = set1.stream().map(String::toLowerCase).collect(Collectors.toSet());
         Set<String> iSet2 = set2.stream().map(String::toLowerCase).collect(Collectors.toSet());
         return iSet1.stream().filter(not(iSet2::contains)).collect(Collectors.toSet());

@@ -154,7 +154,7 @@ public class SimulatorsIntegrationTest {
     }
 
     @Test
-    void testScenarioInterruption() throws Exception {
+    void testScenarioInterruption() {
         WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, DYNAMIC_PORT);
         Scenario serverScenario = serverSimulator.getScenario();
         // Expect two connections

@@ -13,7 +13,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 class ToxicInterrupterTest extends ToxicTestBase {
 
-    private Interruptible mockInterruptible = mock(Interruptible.class);
+    private final Interruptible mockInterruptible = mock(Interruptible.class);
 
     @Test
     void testInterruption() {

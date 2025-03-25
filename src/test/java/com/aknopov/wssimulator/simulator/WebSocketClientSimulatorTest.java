@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
-import org.mockito.Mockito;
 
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.scenario.Event;
@@ -19,7 +18,7 @@ import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 
 class WebSocketClientSimulatorTest {
-    SessionConfig mockConfig = mock(SessionConfig.class);
+    final SessionConfig mockConfig = mock(SessionConfig.class);
 
     @Test
     void testInvalidUri() {

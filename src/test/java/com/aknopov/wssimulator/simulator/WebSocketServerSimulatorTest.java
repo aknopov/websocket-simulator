@@ -30,7 +30,7 @@ class WebSocketServerSimulatorTest {
 
     private static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
 
-    private WebSocketServer mockServer = mock(WebSocketServer.class);
+    private final WebSocketServer mockServer = mock(WebSocketServer.class);
     private WebSocketSimulator simulator;
 
     @AfterEach

@@ -11,13 +11,11 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
-import org.mockito.Mockito;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.Scenario;
 import com.aknopov.wssimulator.ScenarioInterruptedException;
 import com.aknopov.wssimulator.message.WebSocketMessage;
-import com.aknopov.wssimulator.tyrus.WebSocketClient;
 import jakarta.websocket.CloseReason;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -3,7 +3,7 @@ package com.aknopov.wssimulator;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import jakarta.websocket.CloseReason.CloseCode;
+import jakarta.websocket.CloseReason.CloseCodes;
 
 /**
  * WebSocket event listener
@@ -30,7 +30,7 @@ public interface EventListener {
      *
      * @param closeCode the code why the web socket has been closed
      */
-    void onClose(CloseCode closeCode);
+    void onClose(CloseCodes closeCode);
 
     /**
      * Callback for "error" event

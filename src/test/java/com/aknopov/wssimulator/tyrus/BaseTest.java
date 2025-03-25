@@ -14,9 +14,7 @@ import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.SimulatorEndpoint;
 import com.aknopov.wssimulator.injection.ServiceLocator;
-import jakarta.websocket.CloseReason;
-
-import static org.mockito.Mockito.mock;
+import jakarta.websocket.CloseReason.CloseCodes;
 
 public class BaseTest {
     protected static final String A_PATH = "/path";
@@ -54,7 +52,7 @@ public class BaseTest {
         }
 
         @Override
-        public void onClose(CloseReason.CloseCode closeCode) {
+        public void onClose(CloseCodes closeCode) {
             closeEvent.countDown();
         }
 

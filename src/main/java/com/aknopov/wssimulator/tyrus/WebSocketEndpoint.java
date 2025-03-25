@@ -85,7 +85,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     @Override
     public void onClose(Session session, CloseReason closeReason) {
         logger.debug("Connection closed with {}: {}", closeReason.getCloseCode(), closeReason.getReasonPhrase());
-        eventListener.onClose(closeReason.getCloseCode());
+        eventListener.onClose((CloseReason.CloseCodes)closeReason.getCloseCode());
         this.session = null;
     }
 

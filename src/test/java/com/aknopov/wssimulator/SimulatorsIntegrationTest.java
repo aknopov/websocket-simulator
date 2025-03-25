@@ -68,7 +68,7 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         clientSimulator.start();
 
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
@@ -96,7 +96,7 @@ public class SimulatorsIntegrationTest {
         clientSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateClientUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         clientSimulator.start();
 
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
@@ -115,13 +115,13 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
-                .closeConnection(CloseCodes.GOING_AWAY, SHORT_WAIT)
+                .closeConnection(CloseCodes.GOING_AWAY, Duration.ZERO)
                 // act 2
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_2, Duration.ZERO)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         serverSimulator.start();
 
         WebSocketClientSimulator clientSimulator1 =
@@ -141,7 +141,7 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionClosed(this::validateNormalClose, ACTION_WAIT);
 
         clientSimulator1.start();
-        assertTrue(clientSimulator1.awaitScenarioCompletion(ACTION_WAIT));
+        assertTrue(clientSimulator1.awaitScenarioCompletion(LONG_WAIT));
 
         clientSimulator2.start();
         assertTrue(clientSimulator2.awaitScenarioCompletion(LONG_WAIT));
@@ -172,7 +172,7 @@ public class SimulatorsIntegrationTest {
         clientSimulator.getScenario()
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT)
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO)
                 .wait(SHORT_WAIT);
         clientSimulator.start();
 

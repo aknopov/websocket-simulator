@@ -6,25 +6,28 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 
+import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
 import com.aknopov.wssimulator.tyrus.WebSocketClient;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 
 class WebSocketClientSimulatorTest {
+    final SessionConfig mockConfig = mock(SessionConfig.class);
 
     @Test
     void testInvalidUri() {
-        assertThrows(IllegalArgumentException.class, () -> new WebSocketClientSimulator("://@example.com"));
+        assertThrows(IllegalArgumentException.class, () -> new WebSocketClientSimulator("://@example.com", mockConfig));
     }
 
     @Test
     void testGetPort() {
-        WebSocketClientSimulator simulator = new WebSocketClientSimulator("ws://localhost:12345/path");
+        WebSocketClientSimulator simulator = new WebSocketClientSimulator("ws://localhost:12345/path", mockConfig);
 
         assertEquals(12345, simulator.getPort());
     }
@@ -32,7 +35,7 @@ class WebSocketClientSimulatorTest {
     @Test
     void testLiveCycle() {
         try (MockedConstruction<WebSocketClient> clientMockClass = mockConstruction(WebSocketClient.class)) {
-            WebSocketClientSimulator simulator = new WebSocketClientSimulator("ws://localhost:12345/path");
+            WebSocketClientSimulator simulator = new WebSocketClientSimulator("ws://localhost:12345/path", mockConfig);
             simulator.start();
             simulator.awaitScenarioCompletion(Duration.ofMillis(10));
             simulator.stop();

@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 
 import com.aknopov.wssimulator.message.WebSocketMessage;
 import com.aknopov.wssimulator.scenario.Act;
-import jakarta.websocket.CloseReason.CloseCode;
+import jakarta.websocket.CloseReason.CloseCodes;
 
 /**
  * An interface to scenario
@@ -64,7 +64,7 @@ public interface Scenario extends Iterable<Act<?>> {
      * @param waitPeriod maximum wait time
      * @return this instance
      */
-    Scenario expectConnectionClosed(Consumer<CloseCode> validator, Duration waitPeriod);
+    Scenario expectConnectionClosed(Consumer<CloseCodes> validator, Duration waitPeriod);
 
     /**
      * Adds an act to scenario queue to close connection.
@@ -73,7 +73,7 @@ public interface Scenario extends Iterable<Act<?>> {
      * @param initialDelay delay before closing connection
      * @return this instance
      */
-    Scenario closeConnection(CloseCode closeCode, Duration initialDelay);
+    Scenario closeConnection(CloseCodes closeCode, Duration initialDelay);
 
     /**
      * Adds an act to scenario queue to perform arbitrary functionality.

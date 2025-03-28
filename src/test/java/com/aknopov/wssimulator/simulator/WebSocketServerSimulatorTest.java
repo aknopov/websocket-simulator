@@ -10,7 +10,6 @@ import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
-import com.aknopov.wssimulator.simulator.WebSocketServerSimulator;
 import com.aknopov.wssimulator.tyrus.WebSocketServer;
 
 import static com.aknopov.wssimulator.simulator.WebSocketServerSimulator.DYNAMIC_PORT;
@@ -30,7 +29,7 @@ class WebSocketServerSimulatorTest {
 
     private static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
 
-    private WebSocketServer mockServer = mock(WebSocketServer.class);
+    private final WebSocketServer mockServer = mock(WebSocketServer.class);
     private WebSocketSimulator simulator;
 
     @AfterEach

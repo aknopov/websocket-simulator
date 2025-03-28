@@ -11,14 +11,12 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
-import org.mockito.Mockito;
 
 import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.Scenario;
 import com.aknopov.wssimulator.ScenarioInterruptedException;
 import com.aknopov.wssimulator.message.WebSocketMessage;
-import com.aknopov.wssimulator.tyrus.WebSocketClient;
-import jakarta.websocket.CloseReason;
+import jakarta.websocket.CloseReason.CloseCodes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -54,7 +52,7 @@ class ScenarioImplTest {
     private void validateUpgrade(ProtocolUpgrade protocolUpgrade) {
     }
 
-    private void validateCloseReason(CloseReason.CloseCode closeCode) {
+    private void validateCloseReason(CloseCodes closeCode) {
     }
 
     @BeforeEach
@@ -67,7 +65,7 @@ class ScenarioImplTest {
                 .perform(() -> {}, TEST_DURATION)
                 .sendMessage(ByteBuffer.wrap("Hello".getBytes(StandardCharsets.UTF_8)), TEST_DURATION)
                 .wait(TEST_DURATION)
-                .closeConnection(CloseReason.CloseCodes.PROTOCOL_ERROR, TEST_DURATION)
+                .closeConnection(CloseCodes.PROTOCOL_ERROR, TEST_DURATION)
                 .expectConnectionClosed(this::validateCloseReason, TEST_DURATION);
     }
 

@@ -15,6 +15,7 @@ import com.aknopov.wssimulator.tyrus.WebSocketServer;
 public class WebSocketServerSimulator extends WebSocketSimulatorBase {
     public static final int DYNAMIC_PORT = 0;
     private final WebSocketServer wsServer;
+    private final SessionConfig config;
 
     /**
      * Creates simulator with given configuration
@@ -32,6 +33,7 @@ public class WebSocketServerSimulator extends WebSocketSimulatorBase {
     WebSocketServerSimulator(SessionConfig config, WebSocketServer wsServer) {
         super("ServerSimulator");
         this.wsServer = wsServer;
+        this.config = config;
         ServiceLocator.init(config, this);
         startServer(config);
     }
@@ -57,7 +59,8 @@ public class WebSocketServerSimulator extends WebSocketSimulatorBase {
 
     @Override
     public void stop() {
-        wsServer.stop();
         super.stop();
+        wsServer.stop();
+        wsServer.waitForStop(config.idleTimeout());
     }
 }

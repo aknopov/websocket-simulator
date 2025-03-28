@@ -11,18 +11,19 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import org.glassfish.tyrus.client.ClientManager;
-import org.glassfish.tyrus.client.ClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
 import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.Utils;
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.CloseReason.CloseCodes;
+import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.HandshakeResponse;
+import jakarta.websocket.WebSocketContainer;
 
 /**
  * Client implementation.
@@ -34,6 +35,7 @@ public class WebSocketClient {
     private final URI url;
     private final EventListener eventListener;
     private final ClientEndpointConfig cec;
+    private final SessionConfig sessionConfig;
     @Nullable
     private WebSocketEndpoint endpoint;
 
@@ -43,8 +45,9 @@ public class WebSocketClient {
      * @param url server URL (e.g. "ws://localhost:8888/some/path")
      * @param eventListener event listener
      */
-    public WebSocketClient(String url, EventListener eventListener) throws URISyntaxException {
-        this(url, eventListener, HttpHeaders.of(Map.of(), (t, u) -> true));
+    public WebSocketClient(String url, EventListener eventListener, SessionConfig sessionConfig)
+            throws URISyntaxException {
+        this(url, eventListener, sessionConfig, HttpHeaders.of(Map.of(), (t, u) -> true));
     }
 
     /**
@@ -54,10 +57,11 @@ public class WebSocketClient {
      * @param eventListener event listener
      * @param extraHeaders extra headers
      */
-    public WebSocketClient(String url, EventListener eventListener, HttpHeaders extraHeaders)
-            throws URISyntaxException {
+    public WebSocketClient(String url, EventListener eventListener, SessionConfig sessionConfig,
+            HttpHeaders extraHeaders) throws URISyntaxException {
         this.url = new URI(url);
         this.eventListener = eventListener;
+        this.sessionConfig = sessionConfig;
         this.cec = ClientEndpointConfig.Builder.create()
                 .configurator(new ClientEndpointConfigurator(extraHeaders, eventListener))
                 .build();
@@ -80,13 +84,15 @@ public class WebSocketClient {
     public boolean start() {
         logger.debug("Starting WS client");
 
-        ClientManager client = ClientManager.createClient();
-        // As per https://eclipse-ee4j.github.io/tyrus-project.github.io/documentation/latest/index/tyrus-proprietary-config.html#d0e1375
-        client.getProperties().put(ClientProperties.SHARED_CONTAINER_IDLE_TIMEOUT, 30);
+        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        container.setDefaultMaxSessionIdleTimeout(sessionConfig.idleTimeout().toMillis());
+        container.setDefaultMaxTextMessageBufferSize(sessionConfig.bufferSize());
+        container.setDefaultMaxBinaryMessageBufferSize(sessionConfig.bufferSize());
+
         endpoint = new WebSocketEndpoint(eventListener);
         try {
             // We get session through WebSocketEndpoint
-            client.connectToServer(endpoint, cec, url);
+            container.connectToServer(endpoint, cec, url);
             logger.debug("Connected to server");
             return true;
         }

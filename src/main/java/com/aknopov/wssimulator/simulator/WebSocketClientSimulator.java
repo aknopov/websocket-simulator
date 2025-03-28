@@ -4,6 +4,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpHeaders;
 import java.time.Duration;
 
+import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
 import com.aknopov.wssimulator.tyrus.WebSocketClient;
@@ -15,10 +16,10 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
     private static final Duration OPEN_WAIT_DURATION = Duration.ofSeconds(1);
     private final WebSocketClient wsClient;
 
-    public WebSocketClientSimulator(String serverUrl) {
+    public WebSocketClientSimulator(String serverUrl, SessionConfig sessionConfig) {
         super("ClientSimulator");
         try {
-            this.wsClient = new WebSocketClient(serverUrl, this);
+            this.wsClient = new WebSocketClient(serverUrl, this, sessionConfig);
         }
         catch (URISyntaxException e) {
             throw new IllegalArgumentException("Can't connect to '" + serverUrl + "'", e);
@@ -26,10 +27,10 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
     }
 
 
-    public WebSocketClientSimulator(String serverUrl, HttpHeaders extraHeaders) {
+    public WebSocketClientSimulator(String serverUrl, SessionConfig sessionConfig, HttpHeaders extraHeaders) {
         super("ClientSimulator");
         try {
-            this.wsClient = new WebSocketClient(serverUrl, this, extraHeaders);
+            this.wsClient = new WebSocketClient(serverUrl, this, sessionConfig, extraHeaders);
         }
         catch (URISyntaxException e) {
             throw new IllegalArgumentException("Can't connect to '" + serverUrl + "'", e);

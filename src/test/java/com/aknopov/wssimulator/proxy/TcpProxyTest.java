@@ -76,10 +76,10 @@ class TcpProxyTest {
     @Test
     void testPublicFactoryMethods() {
         try (MockedConstruction<SocketFactory> clientMockClass = mockConstruction(SocketFactory.class)) {
-            TcpProxy ignored1 = TcpProxy.createNonToxicProxy(PROXY_CONFIG);
-            TcpProxy ignored2 = TcpProxy.createJitterProxy(PROXY_CONFIG, ACCEPT_PAUSE, SHORT_PAUSE, Duration.ZERO);
-            TcpProxy ignored3 = TcpProxy.createInterruptingProxy(PROXY_CONFIG, ACCEPT_PAUSE);
-            TcpProxy ignored4 = TcpProxy.createSlicerProxy(PROXY_CONFIG, 64, ACCEPT_PAUSE);
+            TcpProxy unused1 = TcpProxy.createNonToxicProxy(PROXY_CONFIG);
+            TcpProxy unused2 = TcpProxy.createJitterProxy(PROXY_CONFIG, ACCEPT_PAUSE, SHORT_PAUSE, Duration.ZERO);
+            TcpProxy unused3 = TcpProxy.createInterruptingProxy(PROXY_CONFIG, ACCEPT_PAUSE);
+            TcpProxy unused4 = TcpProxy.createSlicerProxy(PROXY_CONFIG, 64, ACCEPT_PAUSE);
 
             assertThat(clientMockClass.constructed(), hasSize(4));
         }

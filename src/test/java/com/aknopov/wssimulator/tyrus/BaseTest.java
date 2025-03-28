@@ -14,9 +14,7 @@ import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.SimulatorEndpoint;
 import com.aknopov.wssimulator.injection.ServiceLocator;
-import jakarta.websocket.CloseReason;
-
-import static org.mockito.Mockito.mock;
+import jakarta.websocket.CloseReason.CloseCodes;
 
 public class BaseTest {
     protected static final String A_PATH = "/path";
@@ -25,14 +23,14 @@ public class BaseTest {
     protected static final String TEXT_MESSAGE = "Hello!";
     protected static final ByteBuffer BINARY_MESSAGE =
             ByteBuffer.wrap("Binary message".getBytes(StandardCharsets.UTF_8));
-
+    protected static final SessionConfig
+            SESSION_CONFIG = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
 
     protected final TestEventListener serverListener = new TestEventListener();
-    protected static final SessionConfig config = new SessionConfig(A_PATH, Duration.ofSeconds(IDLE_SECS), BUFFER_SIZE);
 
     @BeforeEach
     protected void initInjection() {
-        ServiceLocator.init(config, serverListener);
+        ServiceLocator.init(SESSION_CONFIG, serverListener);
     }
 
     protected static class TestEventListener implements EventListener {
@@ -54,7 +52,7 @@ public class BaseTest {
         }
 
         @Override
-        public void onClose(CloseReason.CloseCode closeCode) {
+        public void onClose(CloseCodes closeCode) {
             closeEvent.countDown();
         }
 

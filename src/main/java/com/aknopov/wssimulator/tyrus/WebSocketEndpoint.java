@@ -3,30 +3,23 @@ package com.aknopov.wssimulator.tyrus;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
-import org.glassfish.tyrus.core.TyrusUpgradeResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
-import com.aknopov.wssimulator.ProtocolUpgrade;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.SimulatorEndpoint;
 import com.aknopov.wssimulator.injection.ServiceLocator;
 import jakarta.websocket.CloseReason;
-import jakarta.websocket.CloseReason.CloseCode;
+import jakarta.websocket.CloseReason.CloseCodes;
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.EndpointConfig;
-import jakarta.websocket.HandshakeResponse;
 import jakarta.websocket.MessageHandler;
 import jakarta.websocket.Session;
-import jakarta.websocket.server.HandshakeRequest;
-import jakarta.websocket.server.ServerApplicationConfig;
-import jakarta.websocket.server.ServerEndpointConfig;
 
 /**
  * Implementation of web socket simulator endpoint that works as a proxy to injected EventListener
@@ -39,14 +32,6 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
 
     @Nullable
     private Session session;
-
-    /**
-     * Provides configuration class for creating server endpoints.
-     * @return MyServerApplicationConfig class
-     */
-    public static Class<? extends ServerApplicationConfig> getConfigClass() {
-        return MyServerApplicationConfig.class;
-    }
 
     /**
      * Creates the endpoint and injects event listener (server implementation)
@@ -85,7 +70,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     @Override
     public void onClose(Session session, CloseReason closeReason) {
         logger.debug("Connection closed with {}: {}", closeReason.getCloseCode(), closeReason.getReasonPhrase());
-        eventListener.onClose(closeReason.getCloseCode());
+        eventListener.onClose((CloseCodes)closeReason.getCloseCode());
         this.session = null;
     }
 
@@ -132,7 +117,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     }
 
     @Override
-    public void closeConnection(CloseCode closeCode) {
+    public void closeConnection(CloseCodes closeCode) {
         try {
             if (session != null && session.isOpen()) {
                 logger.debug("Closing connection with code {}", closeCode);
@@ -144,31 +129,6 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
         }
         finally {
             session = null;
-        }
-    }
-
-    /**
-     * Tyrus requires this class to be public!
-     */
-    public static class MyServerApplicationConfig implements ServerApplicationConfig {
-        private final EventListener eventListener;
-        private final SessionConfig sessionConfig;
-
-        public MyServerApplicationConfig() {
-            eventListener = ServiceLocator.findOrCreate(EventListener.class);
-            sessionConfig = ServiceLocator.findOrCreate(SessionConfig.class);
-        }
-
-        @Override
-        public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> set) {
-            return Set.of(ServerEndpointConfig.Builder.create(WebSocketEndpoint.class, sessionConfig.contextPath())
-                            .configurator(new ServerEndpointConfigurator(eventListener))
-                    .build());
-        }
-
-        @Override
-        public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> set) {
-            return Set.of();
         }
     }
 
@@ -184,21 +144,6 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
         @Override
         public void onMessage(ByteBuffer message) {
             messageConsumer.accept(message);
-        }
-    }
-
-    private static class ServerEndpointConfigurator extends ServerEndpointConfig.Configurator {
-        private final EventListener eventListener;
-
-        public ServerEndpointConfigurator(EventListener eventListener) {
-            this.eventListener = eventListener;
-        }
-
-        @Override
-        public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
-            int status = (response instanceof TyrusUpgradeResponse tyrusResponse) ? tyrusResponse.getStatus() : -1;
-            eventListener.onHandshake(new ProtocolUpgrade(request.getRequestURI(), request.getQueryString(),
-                    request.getHeaders(), response.getHeaders(), status));
         }
     }
 }

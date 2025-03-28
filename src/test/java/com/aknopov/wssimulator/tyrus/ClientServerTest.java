@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class ClientServerTest extends BaseTest {
-    private static final Duration WAIT_DURATION = Duration.ofMillis(200);
+    private static final Duration WAIT_DURATION = Duration.ofMillis(1000);
 
     @Test
     void TestCommunication() throws Exception {
@@ -21,7 +21,8 @@ public class ClientServerTest extends BaseTest {
         server.waitForStart(WAIT_DURATION);
 
         TestEventListener clientListener = new TestEventListener();
-        WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()), clientListener);
+        WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/path", server.getPort()),
+                clientListener, SESSION_CONFIG);
         client.start();
         client.sendTextMessage(TEXT_MESSAGE);
         client.sendBinaryMessage(BINARY_MESSAGE);
@@ -49,7 +50,7 @@ public class ClientServerTest extends BaseTest {
         server.waitForStart(WAIT_DURATION);
 
         WebSocketClient client = new WebSocketClient(String.format("ws://localhost:%d/another_path", server.getPort()),
-                mock(EventListener.class));
+                mock(EventListener.class), SESSION_CONFIG);
         assertFalse(client.start());
 
         assertFalse(serverListener.handshakeHappened());

@@ -18,7 +18,7 @@ import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.SimulatorEndpoint;
 import com.aknopov.wssimulator.injection.ServiceLocator;
 import jakarta.websocket.CloseReason;
-import jakarta.websocket.CloseReason.CloseCode;
+import jakarta.websocket.CloseReason.CloseCodes;
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.HandshakeResponse;
@@ -85,7 +85,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     @Override
     public void onClose(Session session, CloseReason closeReason) {
         logger.debug("Connection closed with {}: {}", closeReason.getCloseCode(), closeReason.getReasonPhrase());
-        eventListener.onClose((CloseReason.CloseCodes)closeReason.getCloseCode());
+        eventListener.onClose((CloseCodes)closeReason.getCloseCode());
         this.session = null;
     }
 
@@ -132,7 +132,7 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     }
 
     @Override
-    public void closeConnection(CloseCode closeCode) {
+    public void closeConnection(CloseCodes closeCode) {
         try {
             if (session != null && session.isOpen()) {
                 logger.debug("Closing connection with code {}", closeCode);

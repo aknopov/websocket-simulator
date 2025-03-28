@@ -1,12 +1,9 @@
-package com.aknopov.wssimulator.tyrus;
+package com.aknopov.wssimulator;
 
 import java.time.Duration;
 import java.time.Instant;
 
 import org.junit.jupiter.api.Test;
-
-import com.aknopov.wssimulator.ResettableLock;
-import com.aknopov.wssimulator.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

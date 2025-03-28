@@ -11,8 +11,6 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import org.glassfish.tyrus.client.ClientManager;
-import org.glassfish.tyrus.client.ClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,8 +20,10 @@ import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.Utils;
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.CloseReason.CloseCodes;
+import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.HandshakeResponse;
+import jakarta.websocket.WebSocketContainer;
 
 /**
  * Client implementation.
@@ -84,14 +84,15 @@ public class WebSocketClient {
     public boolean start() {
         logger.debug("Starting WS client");
 
-        ClientManager client = ClientManager.createClient();
-        // As per https://eclipse-ee4j.github.io/tyrus-project.github.io/documentation/latest/index/tyrus-proprietary-config.html#d0e1375
-        client.getProperties()
-                .put(ClientProperties.SHARED_CONTAINER_IDLE_TIMEOUT, sessionConfig.idleTimeout().toSeconds());
+        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        container.setDefaultMaxSessionIdleTimeout(sessionConfig.idleTimeout().toMillis());
+        container.setDefaultMaxTextMessageBufferSize(sessionConfig.bufferSize());
+        container.setDefaultMaxBinaryMessageBufferSize(sessionConfig.bufferSize());
+
         endpoint = new WebSocketEndpoint(eventListener);
         try {
             // We get session through WebSocketEndpoint
-            client.connectToServer(endpoint, cec, url);
+            container.connectToServer(endpoint, cec, url);
             logger.debug("Connected to server");
             return true;
         }

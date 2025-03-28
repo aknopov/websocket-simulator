@@ -2,7 +2,7 @@ package com.aknopov.wssimulator;
 
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
-import jakarta.websocket.CloseReason.CloseCode;
+import jakarta.websocket.CloseReason.CloseCodes;
 
 /**
  * API for simulator's endpoint
@@ -30,6 +30,6 @@ public interface SimulatorEndpoint {
      * @param closeCode the code for the reason to close
      * @throws UncheckedIOException if there was an error closing the connection.
      */
-    void closeConnection(CloseCode closeCode);
+    void closeConnection(CloseCodes closeCode);
 }
 

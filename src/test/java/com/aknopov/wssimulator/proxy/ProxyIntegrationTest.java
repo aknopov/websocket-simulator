@@ -17,7 +17,6 @@ import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.ValidationException;
 import com.aknopov.wssimulator.simulator.WebSocketClientSimulator;
 import com.aknopov.wssimulator.simulator.WebSocketServerSimulator;
-import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.CloseReason.CloseCodes;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,9 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ProxyIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(ProxyIntegrationTest.class);
 
-    private static final Duration ACTION_WAIT = Duration.ofMillis(2_000);
+    private static final Duration ACTION_WAIT = Duration.ofMillis(1_000);
     private static final Duration SHORT_WAIT = Duration.ofMillis(50);
-    private static final Duration LONG_WAIT = Duration.ofMillis(20_000);
+    private static final Duration LONG_WAIT = Duration.ofMillis(10_000);
     private static final int PING_PONG_COUNT = 6;
     private static final String A_PATH = "/path";
     private static final TextWebSocketMessage PING = new TextWebSocketMessage("ping");
@@ -182,7 +181,7 @@ public class ProxyIntegrationTest {
         serverScenario.expectConnectionClosed(this::onClose, ACTION_WAIT);
     }
 
-    private void onClose(CloseCode closeCode) {
+    private void onClose(CloseCodes closeCode) {
         logger.info("Connection closed with {}", closeCode);
     }
 

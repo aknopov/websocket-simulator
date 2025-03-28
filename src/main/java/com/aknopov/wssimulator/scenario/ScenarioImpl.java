@@ -17,7 +17,7 @@ import com.aknopov.wssimulator.ScenarioInterruptedException;
 import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
 import com.aknopov.wssimulator.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.message.WebSocketMessage;
-import jakarta.websocket.CloseReason.CloseCode;
+import jakarta.websocket.CloseReason.CloseCodes;
 
 /**
  * Scenario implementation, includes state management
@@ -59,13 +59,13 @@ public class ScenarioImpl implements Scenario {
     }
 
     @Override
-    public Scenario expectConnectionClosed(Consumer<CloseCode> validator, Duration waitPeriod) {
+    public Scenario expectConnectionClosed(Consumer<CloseCodes> validator, Duration waitPeriod) {
         acts.add(new Act<>(waitPeriod, EventType.CLOSED, validator));
         return this;
     }
 
     @Override
-    public Scenario closeConnection(CloseCode closeCode, Duration initialDelay) {
+    public Scenario closeConnection(CloseCodes closeCode, Duration initialDelay) {
         acts.add(new Act<>(initialDelay, EventType.DO_CLOSE, () -> closeCode));
         return this;
     }

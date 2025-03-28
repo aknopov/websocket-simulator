@@ -17,7 +17,6 @@ import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.ValidationException;
 import com.aknopov.wssimulator.simulator.WebSocketClientSimulator;
 import com.aknopov.wssimulator.simulator.WebSocketServerSimulator;
-import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.CloseReason.CloseCodes;
 
 import static com.aknopov.wssimulator.simulator.WebSocketServerSimulator.DYNAMIC_PORT;
@@ -29,9 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SimulatorsIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class);
 
-    private static final Duration ACTION_WAIT = Duration.ofMillis(2_000);
+    private static final Duration ACTION_WAIT = Duration.ofMillis(1_000);
     private static final Duration SHORT_WAIT = Duration.ofMillis(50);
-    private static final Duration LONG_WAIT = Duration.ofMillis(20_000);
+    private static final Duration LONG_WAIT = Duration.ofMillis(10_000);
     private static final String A_PATH = "/path";
     private static final String MESSAGE_1 = "Message 1";
     private static final String MESSAGE_2 = "Message 2";
@@ -200,15 +199,15 @@ public class SimulatorsIntegrationTest {
         }
     }
 
-    private void validateNormalClose(CloseCode closeCode) {
+    private void validateNormalClose(CloseCodes closeCode) {
         validateCloseCode(closeCode, CloseCodes.NORMAL_CLOSURE);
     }
 
-    private void validateGoingAway(CloseCode closeCode) {
+    private void validateGoingAway(CloseCodes closeCode) {
         validateCloseCode(closeCode, CloseCodes.GOING_AWAY);
     }
 
-    private void validateCloseCode(CloseCode closeCode, CloseCode expectedCode) {
+    private void validateCloseCode(CloseCodes closeCode, CloseCodes expectedCode) {
         if (closeCode != expectedCode) {
             throw new ValidationException("Expected socket to be closed with code " + expectedCode.getCode());
         }

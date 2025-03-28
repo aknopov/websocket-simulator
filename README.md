@@ -6,7 +6,7 @@
 
 Java library to simulate WebSocket agents (clients or servers) primarily for creating unit tests. The idea is borrowed from the [WireMock](https://wiremock.org/) library.
 
-The library is based on the [Tyrus](https://github.com/eclipse-ee4j/tyrus) implementation of the WebSocket JSR.
+The library is based on the [Jetty v12](https://jetty.org/) implementation of the WebSocket JSR.
 
 ## Overview
 

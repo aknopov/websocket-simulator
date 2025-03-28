@@ -36,7 +36,7 @@ import com.aknopov.wssimulator.scenario.ValidationException;
 import com.aknopov.wssimulator.message.BinaryWebSocketMessage;
 import com.aknopov.wssimulator.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.message.WebSocketMessage;
-import com.aknopov.wssimulator.tyrus.WebSocketEndpoint;
+import com.aknopov.wssimulator.jetty.WebSocketEndpoint;
 import jakarta.websocket.CloseReason.CloseCodes;
 
 import static com.aknopov.wssimulator.Utils.requireNonNull;

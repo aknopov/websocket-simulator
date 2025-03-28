@@ -1,4 +1,4 @@
-package com.aknopov.wssimulator.tyrus;
+package com.aknopov.wssimulator.jetty;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
-import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.SimulatorEndpoint;
 import com.aknopov.wssimulator.injection.ServiceLocator;
 import jakarta.websocket.CloseReason;
@@ -28,7 +27,6 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketEndpoint.class);
 
     private final EventListener eventListener;
-    private final SessionConfig sessionConfig;
 
     @Nullable
     private Session session;
@@ -39,7 +37,6 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     public WebSocketEndpoint()
     {
         this.eventListener = ServiceLocator.findOrCreate(EventListener.class);
-        this.sessionConfig = ServiceLocator.findOrCreate(SessionConfig.class);
     }
 
     /**
@@ -50,7 +47,6 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
     public WebSocketEndpoint(EventListener eventListener)
     {
         this.eventListener = eventListener;
-        this.sessionConfig = ServiceLocator.findOrCreate(SessionConfig.class);
     }
 
     @Override
@@ -58,9 +54,6 @@ public class WebSocketEndpoint extends Endpoint implements SimulatorEndpoint {
         this.session = session;
         session.addMessageHandler(new TextMessageHandler(this::onTextMessage));
         session.addMessageHandler(new BinaryMessageHandler(this::onBinaryMessage));
-
-        session.setMaxIdleTimeout(sessionConfig.idleTimeout().toMillis()); // necessary
-        session.setMaxBinaryMessageBufferSize(sessionConfig.bufferSize()); // not necessary
 
         // session.getUserProperties().put("started", true); // an example of storing state
 

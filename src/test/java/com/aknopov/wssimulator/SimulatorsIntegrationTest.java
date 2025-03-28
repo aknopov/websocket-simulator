@@ -72,7 +72,7 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         clientSimulator.start();
 
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
@@ -99,7 +99,7 @@ public class SimulatorsIntegrationTest {
         clientSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateClientUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
         clientSimulator.start();
 
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));

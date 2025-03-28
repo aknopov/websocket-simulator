@@ -1,13 +1,11 @@
 package com.aknopov.wssimulator.simulator;
 
-import java.util.Map;
-
 import com.aknopov.wssimulator.SessionConfig;
+import com.aknopov.wssimulator.TimeoutException;
 import com.aknopov.wssimulator.injection.ServiceLocator;
+import com.aknopov.wssimulator.jetty.WebSocketServer;
 import com.aknopov.wssimulator.scenario.Event;
 import com.aknopov.wssimulator.scenario.EventType;
-import com.aknopov.wssimulator.TimeoutException;
-import com.aknopov.wssimulator.tyrus.WebSocketServer;
 
 /**
  * Implementation of WebSocketSimulator for the server
@@ -25,8 +23,8 @@ public class WebSocketServerSimulator extends WebSocketSimulatorBase {
      */
     public WebSocketServerSimulator(SessionConfig config, int port) {
         this(config, port != DYNAMIC_PORT
-                ? new WebSocketServer("localhost", "/", Map.of(), port)
-                : new WebSocketServer("localhost", "/", Map.of()));
+                ? new WebSocketServer("localhost", "/", config, port)
+                : new WebSocketServer("localhost", "/", config));
     }
 
     //VisibleForTesting

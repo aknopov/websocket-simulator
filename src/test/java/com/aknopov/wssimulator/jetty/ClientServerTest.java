@@ -1,9 +1,11 @@
-package com.aknopov.wssimulator.tyrus;
+package com.aknopov.wssimulator.jetty;
 
 import java.time.Duration;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.aknopov.wssimulator.EventListener;
 
@@ -16,7 +18,7 @@ public class ClientServerTest extends BaseTest {
 
     @Test
     void TestCommunication() throws Exception {
-        WebSocketServer server = new WebSocketServer("localhost", "/", Map.of());
+        WebSocketServer server = new WebSocketServer("localhost", "/", SESSION_CONFIG);
         server.start();
         server.waitForStart(WAIT_DURATION);
 
@@ -32,6 +34,7 @@ public class ClientServerTest extends BaseTest {
         // Drain events
         assertTrue(serverListener.waitForClose(WAIT_DURATION));
         server.stop();
+        assertTrue(server.waitForStop(WAIT_DURATION));
 
         assertTrue(serverListener.handshakeHappened());
         assertTrue(serverListener.openHappened());
@@ -45,7 +48,7 @@ public class ClientServerTest extends BaseTest {
 
     @Test
     void testWrongPath() throws Exception {
-        WebSocketServer server = new WebSocketServer("localhost", "/", Map.of());
+        WebSocketServer server = new WebSocketServer("localhost", "/", SESSION_CONFIG);
         server.start();
         server.waitForStart(WAIT_DURATION);
 

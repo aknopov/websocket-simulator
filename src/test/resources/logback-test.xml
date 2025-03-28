@@ -15,5 +15,6 @@
     </root>
 
     <!-- Override some of the noisier loggers -->
+    <logger name="org.eclipse.jetty" level="INFO"/>
 
 </configuration>

@@ -2,14 +2,25 @@ package com.aknopov.wssimulator.tyrus;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.glassfish.tyrus.core.TyrusUpgradeResponse;
 import org.glassfish.tyrus.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.aknopov.wssimulator.EventListener;
+import com.aknopov.wssimulator.ProtocolUpgrade;
+import com.aknopov.wssimulator.SessionConfig;
+import com.aknopov.wssimulator.injection.ServiceLocator;
 import jakarta.websocket.DeploymentException;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.HandshakeResponse;
+import jakarta.websocket.server.HandshakeRequest;
+import jakarta.websocket.server.ServerApplicationConfig;
+import jakarta.websocket.server.ServerEndpointConfig;
 
 import static com.aknopov.wssimulator.SocketFactory.getAvailablePort;
 
@@ -34,7 +45,7 @@ public class WebSocketServer {
      */
     public WebSocketServer(String host, String path, Map<String, Object> properties, int port) {
         this.port = port;
-        this.server = new Server(host, port, path, properties, WebSocketEndpoint.getConfigClass());
+        this.server = new Server(host, port, path, properties, MyServerApplicationConfig.class);
         this.stopLatch = new CountDownLatch(1);
         this.startLatch = new CountDownLatch(1);
         logger.debug("Created WS server on port {}", port);
@@ -110,6 +121,46 @@ public class WebSocketServer {
         }
         catch (InterruptedException e) {
             logger.error("WS server thread interrupted", e);
+        }
+    }
+
+    /**
+     * Tyrus requires this class to be public!
+     */
+    public static class MyServerApplicationConfig implements ServerApplicationConfig {
+        private final EventListener eventListener;
+        private final SessionConfig sessionConfig;
+
+        public MyServerApplicationConfig() {
+            eventListener = ServiceLocator.findOrCreate(EventListener.class);
+            sessionConfig = ServiceLocator.findOrCreate(SessionConfig.class);
+        }
+
+        @Override
+        public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> set) {
+            return Set.of(ServerEndpointConfig.Builder.create(WebSocketEndpoint.class, sessionConfig.contextPath())
+                    .configurator(new ServerEndpointConfigurator(eventListener))
+                    .build());
+        }
+
+        @Override
+        public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> set) {
+            return Set.of();
+        }
+    }
+
+    private static class ServerEndpointConfigurator extends ServerEndpointConfig.Configurator {
+        private final EventListener eventListener;
+
+        public ServerEndpointConfigurator(EventListener eventListener) {
+            this.eventListener = eventListener;
+        }
+
+        @Override
+        public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
+            int status = (response instanceof TyrusUpgradeResponse tyrusResponse) ? tyrusResponse.getStatus() : -1;
+            eventListener.onHandshake(new ProtocolUpgrade(request.getRequestURI(), request.getQueryString(),
+                    request.getHeaders(), response.getHeaders(), status));
         }
     }
 }

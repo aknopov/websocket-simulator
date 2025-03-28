@@ -15,13 +15,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 class WebSocketEndpointTest extends BaseTest {
-    @Test
-    void testConfigCreation() throws Exception {
-        var configClass = WebSocketEndpoint.getConfigClass();
-        var obj = configClass.getDeclaredConstructor()
-                .newInstance();
-        assertNotNull(obj);
-    }
 
     @Test
     void testCreation() {

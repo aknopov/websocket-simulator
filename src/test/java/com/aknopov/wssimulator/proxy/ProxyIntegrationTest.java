@@ -3,6 +3,7 @@ package com.aknopov.wssimulator.proxy;
 import java.time.Duration;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.aknopov.wssimulator.Scenario;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.SocketFactory;
+import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.message.WebSocketMessage;
 import com.aknopov.wssimulator.scenario.Event;
@@ -21,6 +23,7 @@ import jakarta.websocket.CloseReason.CloseCodes;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ProxyIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(ProxyIntegrationTest.class);
@@ -34,18 +37,30 @@ public class ProxyIntegrationTest {
     private static final TextWebSocketMessage PONG = new TextWebSocketMessage("pong");
 
     private static final SessionConfig SESSION_CONFIG = new SessionConfig(A_PATH);
+
     private ProxyConfig proxyConfig;
+    private WebSocketServerSimulator serverSimulator;
 
     @BeforeEach
     void setUp() {
+        configureTestWithServerTimeout(SESSION_CONFIG.idleTimeout());
+    }
+
+    private void configureTestWithServerTimeout(Duration idleTimeout) {
         int serverPort = SocketFactory.getAvailablePort(); //21601
         int clientPort = SocketFactory.getAvailablePort(); //19266
         proxyConfig = new ProxyConfig(clientPort, serverPort, 60_000, 1024, ACTION_WAIT.multipliedBy(PING_PONG_COUNT));
+        SessionConfig serverConfig = new SessionConfig(A_PATH, idleTimeout, 1024);
+        serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
+    }
+
+    @AfterEach
+    void tearDown() {
+        serverSimulator.stop();
     }
 
     @Test
     void testProxyingWithoutToxy() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         TcpProxy proxy = TcpProxy.createNonToxicProxy(proxyConfig);
@@ -60,13 +75,12 @@ public class ProxyIntegrationTest {
         serverSimulator.awaitScenarioCompletion(LONG_WAIT);
         proxy.stop();
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator.hasErrors());
+        assertNoErrors(serverSimulator, "Server errors");
+        assertNoErrors(clientSimulator, "Client errors");
     }
 
     @Test
     void testConnectionInterruption() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         TcpProxy proxy = TcpProxy.createInterruptingProxy(proxyConfig, SHORT_WAIT.multipliedBy(PING_PONG_COUNT / 2),
@@ -93,8 +107,6 @@ public class ProxyIntegrationTest {
     // This test is susceptible to NIC/CPU speed
     @Test
     void testLowJitterLevel() {
-        SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofSeconds(2), 1024);
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, Duration.ZERO, Duration.ofMillis(50),
@@ -110,16 +122,16 @@ public class ProxyIntegrationTest {
         serverSimulator.awaitScenarioCompletion(LONG_WAIT);
         proxy.stop();
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator.hasErrors());
+        assertNoErrors(serverSimulator, "Server");
+        assertNoErrors(clientSimulator, "Client");
     }
-
 
     // This test is susceptible to NIC/CPU speed
     @Test
     void testHighJitterLevel() {
-        SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofMillis(400), 1024);
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
+        // Using low idle timeout requires new server
+        configureTestWithServerTimeout(Duration.ofMillis(400));
+
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         TcpProxy proxy = TcpProxy.createJitterProxy(proxyConfig, Duration.ZERO, Duration.ofMillis(200),
@@ -141,8 +153,9 @@ public class ProxyIntegrationTest {
 
     @Test
     void testNonToxicSlicer() {
-        SessionConfig serverConfig = new SessionConfig(A_PATH, Duration.ofSeconds(1), 1024);
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(serverConfig, proxyConfig.upPort());
+        // Using low idle timeout requires new server
+        configureTestWithServerTimeout(Duration.ofSeconds(1));
+
         String url = "ws://localhost:" + proxyConfig.downPort() + A_PATH;
         WebSocketClientSimulator clientSimulator = new WebSocketClientSimulator(url, SESSION_CONFIG);
         TcpProxy proxy = TcpProxy.createSlicerProxy(proxyConfig, 32, Duration.ofMillis(50), new SocketFactory());
@@ -157,8 +170,8 @@ public class ProxyIntegrationTest {
         serverSimulator.awaitScenarioCompletion(LONG_WAIT);
         proxy.stop();
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator.hasErrors());
+        assertNoErrors(serverSimulator, "Server");
+        assertNoErrors(clientSimulator, "Client");
     }
 
     private void configureScenarios(WebSocketServerSimulator serverSimulator, WebSocketClientSimulator clientSimulator,
@@ -194,6 +207,15 @@ public class ProxyIntegrationTest {
     private void verifyPong(WebSocketMessage message) {
         if (!PONG.equals(message)) {
             throw new ValidationException("Not PONG message: " + message);
+        }
+    }
+
+    private void assertNoErrors(WebSocketSimulator simulator, String hint) {
+        List<Event> errors = simulator.getErrors();
+        if (!errors.isEmpty()) {
+            logger.error("{} errors:", hint);
+            errors.forEach(e -> logger.error("    {}", e));
+            fail();
         }
     }
 }

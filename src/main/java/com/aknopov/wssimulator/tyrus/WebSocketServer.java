@@ -32,8 +32,9 @@ public class WebSocketServer {
 
     private final int port;
     private final Server server;
-    private final CountDownLatch stopLatch;
-    private final CountDownLatch startLatch;
+    private final CountDownLatch started;
+    private final CountDownLatch stopRequested;
+    private final CountDownLatch stopped;
 
     /**
      * Creates server instant.
@@ -46,8 +47,9 @@ public class WebSocketServer {
     public WebSocketServer(String host, String path, Map<String, Object> properties, int port) {
         this.port = port;
         this.server = new Server(host, port, path, properties, MyServerApplicationConfig.class);
-        this.stopLatch = new CountDownLatch(1);
-        this.startLatch = new CountDownLatch(1);
+        this.started = new CountDownLatch(1);
+        this.stopRequested = new CountDownLatch(1);
+        this.stopped = new CountDownLatch(1);
         logger.debug("Created WS server on port {}", port);
     }
 
@@ -68,7 +70,7 @@ public class WebSocketServer {
      * @throws IllegalStateException from creating and running the client
      */
     public void start() {
-        if (startLatch.getCount() == 0) {
+        if (started.getCount() == 0) {
             throw new IllegalStateException("Server is neither in initial state nor stopped");
         }
         logger.debug("Starting WS server on port {}", port);
@@ -79,9 +81,9 @@ public class WebSocketServer {
      * Stops the server and closes connection.
      */
     public synchronized void stop() {
-        if (stopLatch.getCount() == 1) {
+        if (stopRequested.getCount() == 1) {
             logger.debug("Stopping WS server on port {}", port);
-            stopLatch.countDown();
+            stopRequested.countDown();
         }
     }
 
@@ -96,12 +98,12 @@ public class WebSocketServer {
     /**
      * Waits till server starts.
      *
-     * @param waitDuration maximum period to wait start
+     * @param waitDuration maximum period to wait for start
      * @return {@code true} if server started before expiry
      */
     public boolean waitForStart(Duration waitDuration) {
         try {
-            return startLatch.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
+            return started.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e) {
             logger.error("Interrupted while waiting for server port number", e);
@@ -109,12 +111,30 @@ public class WebSocketServer {
         return false;
     }
 
+    /**
+     * Waits till server stops.
+     *
+     * @param waitDuration maximum period to wait for stop
+     * @return {@code true} if server stopped before expiry
+     */
+    public boolean waitForStop(Duration waitDuration) {
+        try {
+            return stopped.await(waitDuration.toMillis(), TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e) {
+            logger.error("Interrupted while waiting for server stop", e);
+        }
+        return false;
+    }
+
     private void runServer() {
         try {
             server.start();
-            startLatch.countDown();
-            stopLatch.await();
-            logger.debug("WS server stopped");
+            started.countDown();
+            stopRequested.await();
+            server.stop();
+            stopped.countDown();
+            logger.debug("WS server on port {} stopped", getPort());
         }
         catch (DeploymentException e) {
             logger.error("Can't start server on port {}", server.getPort(), e);

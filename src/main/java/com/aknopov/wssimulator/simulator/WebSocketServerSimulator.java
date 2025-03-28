@@ -1,5 +1,6 @@
 package com.aknopov.wssimulator.simulator;
 
+import java.time.Duration;
 import java.util.Map;
 
 import com.aknopov.wssimulator.SessionConfig;
@@ -59,5 +60,6 @@ public class WebSocketServerSimulator extends WebSocketSimulatorBase {
     public void stop() {
         wsServer.stop();
         super.stop();
+        wsServer.waitForStop(Duration.ofMinutes(5));//UC from sessionConfig
     }
 }

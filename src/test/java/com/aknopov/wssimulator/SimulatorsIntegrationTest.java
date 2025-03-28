@@ -7,7 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +23,8 @@ import jakarta.websocket.CloseReason.CloseCodes;
 import static com.aknopov.wssimulator.simulator.WebSocketServerSimulator.DYNAMIC_PORT;
 import static java.util.function.Predicate.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SimulatorsIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(SimulatorsIntegrationTest.class);
@@ -41,16 +42,20 @@ public class SimulatorsIntegrationTest {
     private static final SessionConfig SESSION_CONFIG = new SessionConfig(A_PATH);
     private static final String AUTH_HEADER = "Authorization";
 
-    @BeforeAll
-    static void logConfig() {
-        logger.debug("-------------------------");
-        logger.debug("Test configuration: {}", SESSION_CONFIG);
-        logger.debug("-------------------------");
+    private WebSocketServerSimulator serverSimulator;
+
+    @BeforeEach
+    void setUp() {
+        serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, DYNAMIC_PORT);
+    }
+
+    @AfterEach
+    void tearDown() {
+        serverSimulator.stop();
     }
 
     @Test
     void testRunningSimulator() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, DYNAMIC_PORT);
         serverSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 // can be skipped - .expectConnectionOpened(ACTION_WAIT)
@@ -67,7 +72,7 @@ public class SimulatorsIntegrationTest {
                 .expectConnectionOpened(ACTION_WAIT)
                 .sendMessage(MESSAGE_1, SHORT_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         clientSimulator.start();
 
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
@@ -76,13 +81,12 @@ public class SimulatorsIntegrationTest {
         assertTrue(serverSimulator.noMoreEvents());
         assertTrue(clientSimulator.noMoreEvents());
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
-        assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
+        assertNoErrors(serverSimulator, "Server");
+        assertNoErrors(clientSimulator, "Client");
     }
 
     @Test
     void testAuthentication() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, DYNAMIC_PORT);
         serverSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
@@ -95,19 +99,18 @@ public class SimulatorsIntegrationTest {
         clientSimulator.getScenario()
                 .expectProtocolUpgrade(this::validateClientUpgradeWithAuth, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
-                .closeConnection(CloseCodes.NORMAL_CLOSURE, Duration.ZERO);
+                .closeConnection(CloseCodes.NORMAL_CLOSURE, SHORT_WAIT);
         clientSimulator.start();
 
         assertTrue(clientSimulator.awaitScenarioCompletion(LONG_WAIT));
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
-        assertFalse(clientSimulator.hasErrors(), "Client errors: " + clientSimulator.getErrors());
+        assertNoErrors(serverSimulator, "Server");
+        assertNoErrors(clientSimulator, "Client");
     }
 
     @Test
     void testClientReconnect() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, DYNAMIC_PORT);
         serverSimulator.getScenario()
                 // act 1
                 .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
@@ -147,14 +150,13 @@ public class SimulatorsIntegrationTest {
 
         assertTrue(serverSimulator.awaitScenarioCompletion(LONG_WAIT));
 
-        assertFalse(serverSimulator.hasErrors(), "Server errors: " + serverSimulator.getErrors());
-        assertFalse(clientSimulator1.hasErrors(), "Client 1 errors: " + clientSimulator1.getErrors());
-        assertFalse(clientSimulator2.hasErrors(), "Client 2 errors: " + clientSimulator2.getErrors());
+        assertNoErrors(serverSimulator, "Server");
+        assertNoErrors(clientSimulator1, "Client 1");
+        assertNoErrors(clientSimulator2, "Client 2");
     }
 
     @Test
     void testScenarioInterruption() {
-        WebSocketServerSimulator serverSimulator = new WebSocketServerSimulator(SESSION_CONFIG, DYNAMIC_PORT);
         Scenario serverScenario = serverSimulator.getScenario();
         // Expect two connections
         for (int i = 0; i < 2; i++) {
@@ -248,5 +250,14 @@ public class SimulatorsIntegrationTest {
         Set<String> iSet1 = set1.stream().map(String::toLowerCase).collect(Collectors.toSet());
         Set<String> iSet2 = set2.stream().map(String::toLowerCase).collect(Collectors.toSet());
         return iSet1.stream().filter(not(iSet2::contains)).collect(Collectors.toSet());
+    }
+
+    private void assertNoErrors(WebSocketSimulator simulator, String hint) {
+        List<Event> errors = simulator.getErrors();
+        if (!errors.isEmpty()) {
+            logger.error("{} errors:", hint);
+            errors.forEach(e -> logger.error("    {}", e));
+            fail();
+        }
     }
 }

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.aknopov.wssimulator.Scenario;
 import com.aknopov.wssimulator.SessionConfig;
 import com.aknopov.wssimulator.SocketFactory;
+import com.aknopov.wssimulator.WebSocketSimulator;
 import com.aknopov.wssimulator.message.TextWebSocketMessage;
 import com.aknopov.wssimulator.message.WebSocketMessage;
 import com.aknopov.wssimulator.scenario.Event;
@@ -21,6 +22,7 @@ import jakarta.websocket.CloseReason.CloseCodes;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ProxyIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(ProxyIntegrationTest.class);
@@ -60,8 +62,8 @@ public class ProxyIntegrationTest {
         serverSimulator.awaitScenarioCompletion(LONG_WAIT);
         proxy.stop();
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator.hasErrors());
+        assertNoErrors(serverSimulator, "Server errors");
+        assertNoErrors(clientSimulator, "Client errors");
     }
 
     @Test
@@ -110,8 +112,8 @@ public class ProxyIntegrationTest {
         serverSimulator.awaitScenarioCompletion(LONG_WAIT);
         proxy.stop();
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator.hasErrors());
+        assertNoErrors(serverSimulator, "Server");
+        assertNoErrors(clientSimulator, "Client");
     }
 
 
@@ -157,8 +159,8 @@ public class ProxyIntegrationTest {
         serverSimulator.awaitScenarioCompletion(LONG_WAIT);
         proxy.stop();
 
-        assertFalse(serverSimulator.hasErrors());
-        assertFalse(clientSimulator.hasErrors());
+        assertNoErrors(serverSimulator, "Server");
+        assertNoErrors(clientSimulator, "Client");
     }
 
     private void configureScenarios(WebSocketServerSimulator serverSimulator, WebSocketClientSimulator clientSimulator,
@@ -194,6 +196,15 @@ public class ProxyIntegrationTest {
     private void verifyPong(WebSocketMessage message) {
         if (!PONG.equals(message)) {
             throw new ValidationException("Not PONG message: " + message);
+        }
+    }
+
+    private void assertNoErrors(WebSocketSimulator simulator, String hint) {
+        List<Event> errors = simulator.getErrors();
+        if (!errors.isEmpty()) {
+            logger.error("{} errors:", hint);
+            errors.forEach(e -> logger.error("    {}", e));
+            fail();
         }
     }
 }

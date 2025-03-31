@@ -17,7 +17,7 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
     private final WebSocketClient wsClient;
 
     public WebSocketClientSimulator(String serverUrl, SessionConfig sessionConfig) {
-        super("ClientSimulator");
+        super("Client");
         try {
             this.wsClient = new WebSocketClient(serverUrl, this, sessionConfig);
         }
@@ -28,7 +28,7 @@ public class WebSocketClientSimulator extends WebSocketSimulatorBase {
 
 
     public WebSocketClientSimulator(String serverUrl, SessionConfig sessionConfig, HttpHeaders extraHeaders) {
-        super("ClientSimulator");
+        super("Client");
         try {
             this.wsClient = new WebSocketClient(serverUrl, this, sessionConfig, extraHeaders);
         }

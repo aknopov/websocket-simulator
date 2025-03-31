@@ -26,11 +26,10 @@ public class ResettableLock<T> {
      * @throws TimeoutException if data wasn't released before expiry
      */
     public T await(Duration waitDuration) throws InterruptedException {
-        refPayload.set(null);
         synchronized(this) {
-            this.wait(waitDuration.toMillis());
+            this.wait(Math.max(1, waitDuration.toMillis()));
         }
-        T retVal = refPayload.get();
+        T retVal = refPayload.getAndSet(null);
         if (retVal == null) {
             throw new TimeoutException(dataClass.getSimpleName() + " wasn't released in " + waitDuration.toMillis() + " msec");
         }

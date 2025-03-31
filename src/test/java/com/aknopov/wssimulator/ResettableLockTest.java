@@ -16,22 +16,28 @@ class ResettableLockTest {
     private static final int USES_COUNT = 3;
 
     @Test
+    void testPrematureRelease() throws Exception {
+        ResettableLock<Boolean> rl = new ResettableLock<>(Boolean.class);
+
+        assertThrows(TimeoutException.class, () -> rl.await(Duration.ofMillis(0)));
+
+        rl.release(Boolean.TRUE);
+        Utils.sleepUnchecked(WAIT_TIME_MSEC);
+        assertTrue(rl.await(Duration.ofMillis(0)));
+    }
+
+    @Test
     void testReusability() throws Exception {
         ResettableLock<Boolean> rl = new ResettableLock<>(Boolean.class);
 
         for (int i = 0; i < USES_COUNT; i++) {
             new Thread(() -> {
-                try {
-                    Thread.sleep(WAIT_TIME_MSEC);
-                    rl.release(Boolean.TRUE);
-                }
-                catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                Utils.sleepUnchecked(WAIT_TIME_MSEC);
+                rl.release(Boolean.TRUE);
             }).start();
 
             Instant start = Instant.now();
-            assertTrue(rl.await(Duration.ofSeconds(1)));
+            assertTrue(rl.await(Duration.ofMillis(MAX_WAIT_MSEC)));
             Duration timeout = Duration.between(start, Instant.now());
             assertTrue(timeout.toMillis() < MAX_WAIT_MSEC);
         }
@@ -44,13 +50,8 @@ class ResettableLockTest {
 
         for (int i = 0; i < USES_COUNT; i++) {
             new Thread(() -> {
-                try {
-                    Thread.sleep(WAIT_TIME_MSEC);
-                    rl.release(Boolean.TRUE);
-                }
-                catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                Utils.sleepUnchecked(WAIT_TIME_MSEC);
+                rl.release(Boolean.TRUE);
             }).start();
         }
 

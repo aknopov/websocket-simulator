@@ -37,10 +37,11 @@ class WebSocketSimulatorBaseTest {
             ByteBuffer.wrap("Binary message".getBytes(StandardCharsets.UTF_8));
     private static final TextWebSocketMessage WRAPPED_TEXT = new TextWebSocketMessage(TEXT_MESSAGE);
     private static final Duration TEST_WAIT = Duration.ofMillis(200);
+    private static final String ROLE = "Test";
 
     private static class TestWebSocketSimulator extends WebSocketSimulatorBase {
         protected TestWebSocketSimulator() {
-            super("TestSimulator");
+            super(ROLE);
         }
 
         @Override
@@ -79,7 +80,7 @@ class WebSocketSimulatorBaseTest {
         List<Event> events = simulator.getHistory();
         assertEquals(1, events.size());
         assertEquals(EventType.SEND_MESSAGE, events.get(0).eventType());
-        assertEquals(TEXT_MESSAGE, events.get(0).description());
+        assertEquals(ROLE + ": " + TEXT_MESSAGE, events.get(0).description());
     }
 
     @Test
@@ -92,7 +93,7 @@ class WebSocketSimulatorBaseTest {
         List<Event> events = simulator.getHistory();
         assertEquals(1, events.size());
         assertEquals(EventType.SEND_MESSAGE, events.get(0).eventType());
-        assertEquals("Binary, len=" + BINARY_MESSAGE.limit(), events.get(0).description());
+        assertEquals(ROLE + ": " + "Binary, len=" + BINARY_MESSAGE.limit(), events.get(0).description());
     }
 
     @Test
@@ -106,8 +107,8 @@ class WebSocketSimulatorBaseTest {
 
         List<Event> errors = simulator.getErrors();
         assertEquals(2, errors.size());
-        assertEquals("Attempted to send text message before establishing connection", errors.get(0).description());
-        assertEquals("Can't send binary: null", errors.get(1).description());
+        assertEquals(ROLE + ": Attempted to send text message before establishing connection", errors.get(0).description());
+        assertEquals(ROLE + ": Can't send binary: null", errors.get(1).description());
     }
 
     @ParameterizedTest
@@ -148,7 +149,7 @@ class WebSocketSimulatorBaseTest {
 
         List<Event> errors = simulator.getErrors();
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).description().startsWith("Scenario run has been interrupted:"));
+        assertTrue(errors.get(0).description().startsWith(ROLE + ": Scenario run has been interrupted:"));
     }
 
     @Test
@@ -176,7 +177,7 @@ class WebSocketSimulatorBaseTest {
 
         List<Event> errors = simulator.getErrors();
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).description().startsWith("SimulatorEndpoint wasn't released in 200 msec"));
+        assertTrue(errors.get(0).description().startsWith("Test: WebSocketEndpoint wasn't released in 200 msec"));
     }
 
     @Test

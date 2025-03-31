@@ -15,6 +15,9 @@
     </root>
 
     <!-- Override some of the noisier loggers -->
-    <logger name="org.eclipse.jetty" level="INFO"/>
+<!--    <logger name="org.eclipse.jetty" level="INFO"/>-->
+    <logger name="org.eclipse.jetty.util.component.ContainerLifeCycle" level="INFO"/>
+    <logger name="org.eclipse.jetty.util.component.AbstractLifeCycle" level="INFO"/>
+    <logger name="org.eclipse.jetty.ee10.websocket.jakarta.server.config.JakartaWebSocketServletContainerInitializer" level="INFO"/>
 
 </configuration>

@@ -25,6 +25,7 @@ dependencies {
     implementation "org.eclipse.jetty:jetty-server:$jettyVersion"
     implementation "org.eclipse.jetty.ee10.websocket:jetty-ee10-websocket-jakarta-server:$jettyVersion"
     implementation "org.eclipse.jetty.websocket:jetty-websocket-jetty-client:$jettyVersion"
+//    implementation "org.eclipse.jetty:jetty-slf4j-impl:$jettyVersion" //UC
 
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
     testRuntimeOnly "ch.qos.logback:logback-classic:$logbackVersion"

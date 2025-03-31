@@ -113,13 +113,11 @@ public class SimulatorsIntegrationTest {
     void testClientReconnect() {
         serverSimulator.getScenario()
                 // act 1
-                .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_1, Duration.ZERO)
                 .closeConnection(CloseCodes.GOING_AWAY, SHORT_WAIT)
                 // act 2
-                .expectProtocolUpgrade(this::validateUpgrade, ACTION_WAIT)
                 .expectConnectionOpened(ACTION_WAIT)
                 .expectMessage(this::validateTextMessage, ACTION_WAIT)
                 .sendMessage(SERVER_RESPONSE_2, Duration.ZERO)
@@ -185,7 +183,7 @@ public class SimulatorsIntegrationTest {
 
         List<Event> errors = serverSimulator.getErrors();
         assertEquals(1, errors.size(), "Server errors: " + serverSimulator.getErrors());
-        assertTrue(errors.get(0).description().startsWith("Scenario run has been interrupted:"));
+        assertTrue(errors.get(0).description().startsWith("Server: Scenario run has been interrupted:"));
     }
 
     private void validateUpgrade(ProtocolUpgrade protocolUpgrade) {

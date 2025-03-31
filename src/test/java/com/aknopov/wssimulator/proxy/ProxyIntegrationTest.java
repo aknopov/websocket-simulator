@@ -100,8 +100,8 @@ public class ProxyIntegrationTest {
         List<Event> clientErrors = clientSimulator.getErrors();
         assertFalse(serverErrors.isEmpty());
         assertFalse(clientErrors.isEmpty());
-        assertTrue(serverErrors.stream().allMatch(e -> e.description().contains("TimeoutException")));
-        assertTrue(clientErrors.stream().allMatch(e -> e.description().contains("TimeoutException")));
+        assertTrue(serverErrors.stream().allMatch(e -> e.description().contains("wasn't released in")));
+        assertTrue(clientErrors.stream().allMatch(e -> e.description().contains("wasn't released in")));
     }
 
     // This test is susceptible to NIC/CPU speed

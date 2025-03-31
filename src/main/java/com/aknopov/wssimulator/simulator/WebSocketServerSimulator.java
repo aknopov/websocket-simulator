@@ -29,7 +29,7 @@ public class WebSocketServerSimulator extends WebSocketSimulatorBase {
 
     //VisibleForTesting
     WebSocketServerSimulator(SessionConfig config, WebSocketServer wsServer) {
-        super("ServerSimulator");
+        super("Server");
         this.wsServer = wsServer;
         this.config = config;
         ServiceLocator.init(config, this);

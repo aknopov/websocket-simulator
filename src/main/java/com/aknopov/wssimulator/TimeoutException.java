@@ -7,4 +7,9 @@ public class TimeoutException extends RuntimeException {
     public TimeoutException(String message) {
         super(message);
     }
+
+    @Override
+    public String getMessage() {
+        return String.valueOf(super.getMessage());
+    }
 }
